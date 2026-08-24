@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Menu, Moon, Sun, X } from "lucide-react";
 import { useStore } from "../store/useStore";
 import { Magnetic } from "./ui";
+import { ScrambleText } from "./Scramble";
 
 const ANCHORS = [
   { id: "works", label: "Работы" },
@@ -90,7 +91,7 @@ export default function Nav() {
                 className="group relative font-mono text-[11px] uppercase tracking-[0.2em] text-muted transition-colors hover:text-ink"
                 data-cursor
               >
-                {a.label}
+                <ScrambleText text={a.label} />
                 <span className="absolute -bottom-1 left-0 h-px w-0 bg-accent transition-all duration-300 group-hover:w-full" />
               </button>
             ))}

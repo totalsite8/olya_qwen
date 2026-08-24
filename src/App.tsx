@@ -4,6 +4,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Download, X, Smartphone } from "lucide-react";
 import Nav from "./components/Nav";
 import Cursor from "./components/Cursor";
+import Preloader from "./components/Preloader";
+import ParticleField from "./components/ParticleField";
+import ScrollProgress from "./components/ScrollProgress";
 import Home from "./pages/Home";
 import Calculator from "./pages/Calculator";
 import { useStore, type BeforeInstallPromptEvent } from "./store/useStore";
@@ -95,8 +98,11 @@ function Shell() {
 
   return (
     <div className="relative min-h-svh">
+      <ParticleField />
+      <ScrollProgress />
       <div className="noise-layer" aria-hidden />
       <Cursor />
+      <Preloader />
       <Nav />
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>

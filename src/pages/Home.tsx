@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useSpring } from "framer-motion";
 import { ArrowUpRight, Plus, X } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -222,11 +222,29 @@ function ServicesTicker() {
 
 /* ============================= WORKS ============================= */
 function WorkCard({ work, onOpen }: { work: Work; onOpen: (w: Work) => void }) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const rx = useMotionValue(0);
+  const ry = useMotionValue(0);
+  const srx = useSpring(rx, { stiffness: 160, damping: 16, mass: 0.5 });
+  const sry = useSpring(ry, { stiffness: 160, damping: 16, mass: 0.5 });
+
   return (
-    <button
+    <motion.button
+      ref={ref}
       onClick={() => onOpen(work)}
+      onMouseMove={(e) => {
+        const r = ref.current?.getBoundingClientRect();
+        if (!r) return;
+        ry.set(((e.clientX - r.left) / r.width - 0.5) * 5);
+        rx.set(-((e.clientY - r.top) / r.height - 0.5) * 5);
+      }}
+      onMouseLeave={() => {
+        rx.set(0);
+        ry.set(0);
+      }}
+      style={{ rotateX: srx, rotateY: sry, transformPerspective: 1000 }}
       data-cursor
-      className="group relative block h-full w-full overflow-hidden border border-line bg-card text-left"
+      className="group relative block h-full w-full overflow-hidden border border-line bg-card text-left will-change-transform"
     >
       <div className={`relative overflow-hidden ${work.ratio}`}>
         <img
@@ -260,7 +278,7 @@ function WorkCard({ work, onOpen }: { work: Work; onOpen: (w: Work) => void }) {
           </span>
         </div>
       </div>
-    </button>
+    </motion.button>
   );
 }
 
