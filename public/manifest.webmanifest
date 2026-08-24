@@ -1,0 +1,26 @@
+{
+  "name": "Ольга Бакушкина — дизайнер",
+  "short_name": "Ольга Б.",
+  "description": "Портфолио дизайнера: брендинг, нейрогенерации, моушн, презентации. Внутренний калькулятор стоимости.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "ru",
+  "background_color": "#131210",
+  "theme_color": "#131210",
+  "icons": [
+    {
+      "src": "https://image.qwenlm.ai/generated-images/97c5f570-7793-4c8c-a840-aed5004268ca/_result.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://image.qwenlm.ai/generated-images/97c5f570-7793-4c8c-a840-aed5004268ca/_result.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
