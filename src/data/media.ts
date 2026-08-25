@@ -3,7 +3,8 @@
  * Подключены через raw.githubusercontent, поэтому работают и в dev, и на Vercel.
  * Если переложить upload/ в public/, достаточно поменять MEDIA_BASE на "/upload".
  */
-const GH = "https://raw.githubusercontent.com/totalsite8/olya_qwen/main/upload";
+const GH =
+  "https://raw.githubusercontent.com/totalsite8/olya_qwen/cost-calculator-for-services-b3ad4/upload";
 const FX = `${GH}/figma_export/assets`;
 
 export const MEDIA_BASE = GH;
@@ -11,8 +12,9 @@ export const MEDIA_BASE = GH;
 export const MEDIA = {
   /* Видео */
   showreel: `${GH}/0824.mp4`,
-  videoPoster: "https://image.qwenlm.ai/generated-images/3ae05ff6-8f87-4630-bf92-7798e2a1abe0/_result.png",
-  videoBg: "https://image.qwenlm.ai/generated-images/45a4dd78-2dde-4b3b-91b6-9de00f6cb0ad/_result.png",
+  /* Реальные кадры из архива (без сгенерированных превью) */
+  videoPoster: `${FX}/04_ecozavr/ecozavr-yellow-bottle-pour.webp`,
+  videoBg: `${FX}/01_hero/hero-background-abstract.webp`,
 
   /* Общие фоны из макета */
   heroBg: `${FX}/01_hero/hero-background-abstract.webp`,
