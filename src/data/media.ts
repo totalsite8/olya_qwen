@@ -1,11 +1,13 @@
 /**
  * Все медиа — из папки upload репозитория (экспорт Figma-макета + ролик).
- * Подключены через raw.githubusercontent, поэтому работают и в dev, и на Vercel.
+ * Подключены через jsDelivr (зеркало GitHub: быстрый CDN, отдаёт в РФ,
+ * в отличие от raw.githubusercontent, который периодически блокируется).
+ * Структура в репо: upload/assets/…, upload/0824.mp4.
  * Если переложить upload/ в public/, достаточно поменять MEDIA_BASE на "/upload".
  */
 const GH =
-  "https://raw.githubusercontent.com/totalsite8/olya_qwen/cost-calculator-for-services-b3ad4/upload";
-const FX = `${GH}/figma_export/assets`;
+  "https://cdn.jsdelivr.net/gh/totalsite8/olya_qwen@cost-calculator-for-services-b3ad4/upload";
+const FX = `${GH}/assets`;
 
 export const MEDIA_BASE = GH;
 
