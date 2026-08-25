@@ -5,15 +5,32 @@ import { PageHero, PageMarquee, MarketInsight, Process, PriceStrip, PageCTA } fr
 import { SectionHead, FadeIn } from "../components/ui";
 import { fmtMoney } from "../lib/format";
 
-const DREAMS = "https://image.qwenlm.ai/generated-images/7a2c9cb1-d8fd-406a-9790-746e69d7fdb0/_result.png";
-const AVATAR = "https://image.qwenlm.ai/generated-images/5efa2a75-f867-478a-967c-76668cbaaf34/_result.png";
-const MOTION = "https://image.qwenlm.ai/generated-images/f5252de6-1b5c-43c7-819b-9eb7d8ed4ecf/_result.png";
-
+/* Все кадры — реальные работы из архива */
 const SHOWCASE = [
-  { img: DREAMS, t: "«Сны машины»", d: "хромовая органика · серия 24 работы · печать 4K", tag: "Midjourney + ретушь" },
-  { img: AVATAR, t: "Цифровой спикер", d: "говорящий аватар · клон голоса · 3 языка", tag: "HeyGen + ElevenLabs" },
-  { img: MEDIA.ecoFlowers, t: "Продукт без студии", d: "нейро-сцены для Ecozavr · лайфстайл · e-com", tag: "генерация + арт-дирекшн" },
-  { img: MOTION, t: "Ожившие кадры", d: "статичный ключевой кадр → 5-сек клип", tag: "Runway + Kling" },
+  {
+    img: MEDIA.alfaCatFull,
+    t: "Консистентный персонаж",
+    d: "один герой · 10+ ракурсов и эмоций · кейс «Альфы»",
+    tag: "нейро-база + ручная доработка",
+  },
+  {
+    img: MEDIA.domLaptop,
+    t: "Цифровые герои",
+    d: "маскоты для SMM-систем, эфиров и стикерпаков",
+    tag: "персонажи · канал «Домашний»",
+  },
+  {
+    img: MEDIA.ecoFlowers,
+    t: "Продукт без студии",
+    d: "сцены для Ecozavr: лайфстайл, натюрморты, e-com",
+    tag: "генерация + арт-дирекшн",
+  },
+  {
+    img: MEDIA.projectsBg,
+    t: "Абстрактные миры",
+    d: "фоновый арт и текстуры под айдентику бренда",
+    tag: "стиль-трансфер · апскейл 4K",
+  },
 ];
 
 function Showcase() {

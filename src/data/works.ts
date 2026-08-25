@@ -24,8 +24,8 @@ export interface Work {
   poster?: string;
 }
 
-export const PORTRAIT =
-  "https://image.qwenlm.ai/generated-images/b37c32ce-a8f7-4da8-928a-ba8350d49e23/_result.png";
+/** Реальный вертикальный ассет из архива (маскоты «Альфы») — вместо сгенерированного фото */
+export const PORTRAIT = MEDIA.heroCardAlfa;
 
 export const WORKS: Work[] = [
   {
