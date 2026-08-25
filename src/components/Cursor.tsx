@@ -1,66 +1,61 @@
 import { useEffect, useState } from "react";
-import { motion, useMotionValue, useSpring } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 
 /**
- * Курсор — обычный системный. Но он «влияет на поле»: за ним следует мягкое
- * акцентное свечение (screen-блендинг), которое подсвечивает участок сайта —
- * весь интерфейс слегка реагирует на присутствие указателя.
+ * Курсор — обычный системный, ничего не перехватываем.
+ * «Влияние на всё поле»:
+ *  1) мягкий акцентный свет (soft-light) следует за указателем по всему сайту;
+ *  2) CSS-переменные --mx/--my сдвигают фоновые слои (сетка, частицы) —
+ *     полотно слегка «дышит» в сторону курсора.
+ * Не оборачивает страницу в transform — fixed-элементы (меню, модалки)
+ * продолжают работать корректно.
  */
 export default function Cursor() {
   const [enabled, setEnabled] = useState(false);
-  const x = useMotionValue(-600);
-  const y = useMotionValue(-600);
-  const gx = useSpring(x, { stiffness: 46, damping: 18, mass: 1.1 });
-  const gy = useSpring(y, { stiffness: 46, damping: 18, mass: 1.1 });
-  const [active, setActive] = useState(false);
+  const gx = useMotionValue(50);
+  const gy = useMotionValue(40);
+  const sgx = useSpring(gx, { stiffness: 40, damping: 20, mass: 1 });
+  const sgy = useSpring(gy, { stiffness: 40, damping: 20, mass: 1 });
+  const spotlight = useTransform(
+    [sgx, sgy],
+    ([x, y]) => `radial-gradient(640px circle at ${x}% ${y}%, var(--accent-glow), transparent 62%)`
+  );
 
   useEffect(() => {
-    const mq = window.matchMedia("(pointer: fine)");
-    if (!mq.matches) return;
+    const fine = window.matchMedia("(pointer: fine)").matches;
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!fine || calm) return;
     setEnabled(true);
 
     let raf = 0;
-    const move = (e: MouseEvent) => {
+    const onMove = (e: PointerEvent) => {
+      const nx = (e.clientX / window.innerWidth) * 2 - 1;
+      const ny = (e.clientY / window.innerHeight) * 2 - 1;
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
-        x.set(e.clientX);
-        y.set(e.clientY);
+        gx.set((e.clientX / window.innerWidth) * 100);
+        gy.set((e.clientY / window.innerHeight) * 100);
+        document.documentElement.style.setProperty("--mx", nx.toFixed(3));
+        document.documentElement.style.setProperty("--my", ny.toFixed(3));
       });
     };
-    const enter = () => setActive(true);
-    const leave = () => setActive(false);
-
-    window.addEventListener("mousemove", move, { passive: true });
-    document.documentElement.addEventListener("mouseenter", enter);
-    document.documentElement.addEventListener("mouseleave", leave);
+    window.addEventListener("pointermove", onMove, { passive: true });
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("mousemove", move);
-      document.documentElement.removeEventListener("mouseenter", enter);
-      document.documentElement.removeEventListener("mouseleave", leave);
+      window.removeEventListener("pointermove", onMove);
     };
-  }, [x, y]);
+  }, [gx, gy]);
 
   if (!enabled) return null;
 
   return (
     <motion.div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-[2] overflow-hidden"
-      animate={{ opacity: active ? 1 : 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <motion.div
-        className="absolute left-0 top-0 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{
-          x: gx,
-          y: gy,
-          background:
-            "radial-gradient(circle, color-mix(in srgb, var(--accent) 13%, transparent) 0%, color-mix(in srgb, var(--accent-2) 6%, transparent) 38%, transparent 70%)",
-          mixBlendMode: "screen",
-          filter: "blur(6px)",
-        }}
-      />
-    </motion.div>
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8 }}
+      className="pointer-events-none fixed inset-0 z-[93]"
+      style={{ background: spotlight, mixBlendMode: "soft-light" }}
+    />
   );
 }

@@ -13,6 +13,7 @@
   --accent: #ff4d1f;
   --accent-2: #6d7bff;
   --accent-ink: #131210;
+  --accent-glow: rgba(255, 77, 31, 0.11);
   --warn: #f5b841;
   --ok: #7fd6a4;
   --img-dim: 0.92;
@@ -29,6 +30,7 @@
   --accent: #e8400f;
   --accent-2: #3d4edb;
   --accent-ink: #f7f5ef;
+  --accent-glow: rgba(232, 64, 15, 0.09);
   --warn: #a86a00;
   --ok: #1f7a4d;
   --img-dim: 1;

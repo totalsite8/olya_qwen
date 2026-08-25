@@ -50,7 +50,7 @@ export function PageHero({
   return (
     <div ref={bgRef} className="relative overflow-hidden pt-16 md:pt-[72px]">
       <div className="absolute inset-0">
-        <img ref={imgRef} src={bg} alt="" className="h-[120%] w-full object-cover opacity-[0.34]" />
+        <img ref={imgRef} src={bg} alt="" className="absolute -top-[10%] h-[132%] w-full object-cover opacity-[0.34]" />
         <div className="absolute inset-0 bg-gradient-to-b from-bg/70 via-bg/45 to-bg" />
       </div>
 
