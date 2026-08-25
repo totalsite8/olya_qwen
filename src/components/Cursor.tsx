@@ -1,73 +1,66 @@
 import { useEffect, useState } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 
-/** Кастомный курсор: точка + догоняющее кольцо, увеличивается на интерактивных элементах */
+/**
+ * Курсор — обычный системный. Но он «влияет на поле»: за ним следует мягкое
+ * акцентное свечение (screen-блендинг), которое подсвечивает участок сайта —
+ * весь интерфейс слегка реагирует на присутствие указателя.
+ */
 export default function Cursor() {
   const [enabled, setEnabled] = useState(false);
-  const x = useMotionValue(-100);
-  const y = useMotionValue(-100);
-  const ringX = useSpring(x, { stiffness: 260, damping: 26, mass: 0.6 });
-  const ringY = useSpring(y, { stiffness: 260, damping: 26, mass: 0.6 });
-  const [hover, setHover] = useState(false);
-  const [down, setDown] = useState(false);
+  const x = useMotionValue(-600);
+  const y = useMotionValue(-600);
+  const gx = useSpring(x, { stiffness: 46, damping: 18, mass: 1.1 });
+  const gy = useSpring(y, { stiffness: 46, damping: 18, mass: 1.1 });
+  const [active, setActive] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(pointer: fine)");
-    setEnabled(mq.matches);
     if (!mq.matches) return;
+    setEnabled(true);
 
+    let raf = 0;
     const move = (e: MouseEvent) => {
-      x.set(e.clientX);
-      y.set(e.clientY);
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        x.set(e.clientX);
+        y.set(e.clientY);
+      });
     };
-    const over = (e: MouseEvent) => {
-      const t = e.target as HTMLElement | null;
-      setHover(!!t?.closest("a, button, [data-cursor], input, label, [role='button']"));
-    };
-    const dn = () => setDown(true);
-    const up = () => setDown(false);
+    const enter = () => setActive(true);
+    const leave = () => setActive(false);
+
     window.addEventListener("mousemove", move, { passive: true });
-    window.addEventListener("mouseover", over, { passive: true });
-    window.addEventListener("mousedown", dn);
-    window.addEventListener("mouseup", up);
+    document.documentElement.addEventListener("mouseenter", enter);
+    document.documentElement.addEventListener("mouseleave", leave);
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener("mousemove", move);
-      window.removeEventListener("mouseover", over);
-      window.removeEventListener("mousedown", dn);
-      window.removeEventListener("mouseup", up);
+      document.documentElement.removeEventListener("mouseenter", enter);
+      document.documentElement.removeEventListener("mouseleave", leave);
     };
   }, [x, y]);
 
   if (!enabled) return null;
 
   return (
-    <>
+    <motion.div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-[2] overflow-hidden"
+      animate={{ opacity: active ? 1 : 0 }}
+      transition={{ duration: 0.6 }}
+    >
       <motion.div
-        aria-hidden
-        className="pointer-events-none fixed left-0 top-0 z-[95] hidden md:block"
-        style={{ x, y }}
-      >
-        <motion.div
-          className="-translate-x-1/2 -translate-y-1/2 rounded-full bg-accent"
-          animate={{ scale: down ? 0.5 : hover ? 0.4 : 1, width: 8, height: 8 }}
-          transition={{ duration: 0.18 }}
-        />
-      </motion.div>
-      <motion.div
-        aria-hidden
-        className="pointer-events-none fixed left-0 top-0 z-[94] hidden md:block"
-        style={{ x: ringX, y: ringY }}
-      >
-        <motion.div
-          className="-translate-x-1/2 -translate-y-1/2 rounded-full border border-ink/50 mix-blend-difference"
-          animate={{
-            scale: down ? 0.8 : hover ? 1.9 : 1,
-            opacity: hover ? 0.9 : 0.45,
-          }}
-          transition={{ type: "spring", stiffness: 320, damping: 24 }}
-          style={{ width: 34, height: 34 }}
-        />
-      </motion.div>
-    </>
+        className="absolute left-0 top-0 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          x: gx,
+          y: gy,
+          background:
+            "radial-gradient(circle, color-mix(in srgb, var(--accent) 13%, transparent) 0%, color-mix(in srgb, var(--accent-2) 6%, transparent) 38%, transparent 70%)",
+          mixBlendMode: "screen",
+          filter: "blur(6px)",
+        }}
+      />
+    </motion.div>
   );
 }
