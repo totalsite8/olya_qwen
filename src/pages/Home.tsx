@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useMotionValue, useSpring } from "framer-motion";
-import { ArrowUpRight, Plus, X } from "lucide-react";
+import { ArrowUpRight, Play, Plus, X } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { FILTERS, PORTRAIT, WORKS, type Work } from "../data/works";
@@ -270,17 +270,36 @@ function WorkCard({ work, onOpen }: { work: Work; onOpen: (w: Work) => void }) {
       className="group relative block h-full w-full overflow-hidden border border-line bg-card text-left will-change-transform"
     >
       <div className={`relative overflow-hidden ${work.ratio}`}>
-        <img
-          src={work.image}
-          alt={work.title}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.06]"
-        />
+        {work.video ? (
+          <video
+            src={work.video}
+            poster={work.poster}
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            onMouseEnter={(e) => e.currentTarget.play().catch(() => undefined)}
+            onMouseLeave={(e) => e.currentTarget.pause()}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <img
+            src={work.image}
+            alt={work.title}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.06]"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-bg/85 via-bg/10 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-100" />
 
         <span className="absolute left-4 top-4 rounded-full border border-line bg-bg/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] backdrop-blur-sm">
           {work.index} · {work.category}
         </span>
+        {work.video && (
+          <span className="absolute left-1/2 top-1/2 grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-bg/70 text-ink backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+            <Play size={20} className="ml-0.5" />
+          </span>
+        )}
         <span
           className={`absolute right-4 top-4 grid h-10 w-10 translate-y-2 place-items-center rounded-full bg-accent text-accentink opacity-0 transition-all duration-400 group-hover:translate-y-0 group-hover:opacity-100`}
         >
@@ -342,7 +361,20 @@ function WorkModal({ work, onClose }: { work: Work; onClose: () => void }) {
             <X size={16} />
           </button>
           <div className="relative aspect-[4/3] overflow-hidden md:aspect-auto md:min-h-[480px]">
-            <img src={work.image} alt={work.title} className="h-full w-full object-cover" />
+            {work.video ? (
+              <video
+                src={work.video}
+                poster={work.poster}
+                controls
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="h-full w-full bg-bg object-cover"
+              />
+            ) : (
+              <img src={work.image} alt={work.title} className="h-full w-full object-cover" />
+            )}
           </div>
           <div className="flex flex-col gap-6 p-7 md:p-10">
             <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
@@ -371,13 +403,17 @@ function WorkModal({ work, onClose }: { work: Work; onClose: () => void }) {
                 </div>
                 <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
                   {work.gallery.map((g, gi) => (
-                    <img
-                      key={g + gi}
-                      src={g}
-                      alt={`${work.title} — материал ${gi + 1}`}
-                      loading="lazy"
-                      className="h-20 w-28 shrink-0 rounded-lg border border-line object-cover transition-transform duration-300 hover:scale-105 md:h-24 md:w-36"
-                    />
+                    <figure key={g.src + gi} className="shrink-0">
+                      <img
+                        src={g.src}
+                        alt={`${work.title} — ${g.cap}`}
+                        loading="lazy"
+                        className="h-20 w-28 rounded-lg border border-line object-cover transition-transform duration-300 hover:scale-105 md:h-24 md:w-36"
+                      />
+                      <figcaption className="mt-1 w-28 truncate font-mono text-[9px] uppercase tracking-wide text-muted md:w-36">
+                        {g.cap}
+                      </figcaption>
+                    </figure>
                   ))}
                 </div>
               </div>

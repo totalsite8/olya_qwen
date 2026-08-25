@@ -170,7 +170,6 @@ function Shell() {
       </AnimatePresence>
       <InstallBanner />
     </div>
-    </TiltShell>
   );
 }
 
