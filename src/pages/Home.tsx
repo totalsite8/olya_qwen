@@ -1,20 +1,17 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   AnimatePresence,
   motion,
   useMotionValue,
-  useMotionValueEvent,
-  useScroll,
   useSpring,
-  useTransform,
 } from "framer-motion";
 import { ArrowUpRight, Play, Plus, X } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { FILTERS, PORTRAIT, WORKS, type Work } from "../data/works";
 import { MEDIA } from "../data/media";
-import { Magnetic, Marquee } from "../components/ui";
+import { Magnetic, Marquee, Sprockets } from "../components/ui";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -50,7 +47,7 @@ const CHAPTERS: Chapter[] = [
     name: "Нейрогенерации",
     desc: "Персонажи, продуктовые сцены и целые миры: генерация — 10% работы, остальное — отбор и ручная доработка.",
     chips: ["Консистентные персонажи", "Продукт без студии", "LoRA под ваш стиль"],
-    visuals: [MEDIA.alfaCatFull, MEDIA.domLaptop, MEDIA.projectsBg],
+    visuals: [MEDIA.alfaMascotsHero, MEDIA.domLaptop, MEDIA.projectsBg],
     meta: "кейс «Альфа»",
   },
   {
@@ -253,7 +250,6 @@ function HeroBoard() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-bg/55 via-bg/25 to-bg" />
       </div>
-      {/* живой акцент */}
       <span
         aria-hidden
         className="spin-slow pointer-events-none absolute left-[42%] top-[14%] hidden text-4xl text-accent/50 lg:block"
@@ -261,7 +257,7 @@ function HeroBoard() {
         ✷
       </span>
 
-      <div className="relative mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-10 px-5 pb-8 md:px-10 lg:grid-cols-12 lg:gap-8 lg:pb-20">
+      <div className="relative mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-10 px-5 pb-8 md:px-10 lg:grid-cols-12 lg:gap-8 lg:pb-16">
         {/* ЛЕВО: индекс-проводник */}
         <div className="flex flex-col justify-center lg:col-span-5">
           <motion.div
@@ -310,7 +306,6 @@ function HeroBoard() {
             {fine ? "наведи на строку — кадр оживёт · перетащи его" : "выбери направление — листай кадры →"}
           </motion.p>
 
-          {/* индекс */}
           <div className="mt-7 border-t border-line">
             {CHAPTERS.map((ch, i) => (
               <motion.div
@@ -357,16 +352,13 @@ function HeroBoard() {
           >
             <span>RU · US · EU</span>
             <span className="hidden sm:block">06 кейсов · 4 направления</span>
-            <span>листай — главы услуг ↓</span>
+            <span>листай — плёнка услуг ↓</span>
           </motion.div>
         </div>
 
         {/* ПРАВО: живая доска материалов */}
         <div className="relative hidden lg:col-span-7 lg:block">
-          <div
-            ref={boardRef}
-            className="board-hint relative h-[56vh] max-h-[620px] min-h-[440px] w-full"
-          >
+          <div ref={boardRef} className="board-hint relative h-[54vh] max-h-[600px] min-h-[430px] w-full">
             <span className="absolute -top-7 right-0 font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
               перетащи кадры ✷ клик — открыть
             </span>
@@ -425,7 +417,6 @@ function HeroBoard() {
         </div>
       </div>
 
-      {/* бегущая строка материалов — нижняя кромка пульта */}
       <div className="relative border-t border-line bg-bg2/80 py-3 backdrop-blur lg:border-b">
         <Marquee duration={24}>
           {["Шоурил 45 сек", "Маскоты «Альфы»", "Питч-деки", "AI-аватары", "Упаковка Ecozavr", "SMM-системы", "Эксплейнеры", "LoRA под стиль"].map(
@@ -448,191 +439,308 @@ function HeroBoard() {
   );
 }
 
-/* ================= СКРОЛЛ-ГЛАВЫ ================= */
-function ChapterBlock({ ch, idx }: { ch: Chapter; idx: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
-  const [img, setImg] = useState(0);
-  const scale = useTransform(scrollYProgress, [0, 1], [1.1, 1]);
+/* ================= ПЛЁНКА УСЛУГ ================= */
+function FilmPanel({
+  ch,
+  idx,
+  active,
+  frame,
+  setFrame,
+}: {
+  ch: Chapter;
+  idx: number;
+  active: number;
+  frame: number;
+  setFrame: (i: number) => void;
+}) {
+  const isActive = active === idx;
   const count = ch.visuals.length;
-
-  useMotionValueEvent(scrollYProgress, "change", (v) => {
-    setImg(Math.min(count - 1, Math.floor(v * count)));
-  });
-
   return (
-    <div ref={ref} className="relative lg:h-[230vh]">
-      <div className="grid grid-cols-1 lg:sticky lg:top-0 lg:h-svh lg:grid-cols-2 lg:overflow-hidden">
-        {/* визуал */}
-        <div className="relative hidden overflow-hidden border-r border-line lg:block">
-          <motion.div style={{ scale }} className="absolute inset-0">
-            {ch.video && img === 0 ? (
-              <video
-                src={ch.video}
-                poster={ch.visuals[0]}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <AnimatePresence mode="popLayout">
-                <motion.img
-                  key={img}
-                  src={ch.visuals[img]}
-                  alt={ch.name}
-                  initial={{ opacity: 0, scale: 1.04 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="h-full w-full object-cover"
-                />
-              </AnimatePresence>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-bg/60" />
-          </motion.div>
-          {/* счётчик кадров */}
-          <div className="absolute bottom-6 left-6 flex items-center gap-2">
-            {ch.visuals.map((_, i) => (
-              <span
-                key={i}
-                className={`h-1 rounded-full transition-all duration-500 ${
-                  i === img ? "w-8 bg-accent" : "w-3 bg-line"
-                }`}
-              />
-            ))}
-            <span className="ml-3 font-mono text-[10px] uppercase tracking-[0.2em] text-ink/70">
-              {String(img + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}
-            </span>
-          </div>
-        </div>
+    <article
+      className={`relative flex h-[64svh] w-[88vw] shrink-0 snap-start flex-col justify-center px-6 pt-8 transition-opacity duration-500 md:px-12 lg:h-full lg:w-[74vw] lg:pt-0 xl:w-[68vw] ${
+        isActive ? "opacity-100" : "opacity-40"
+      }`}
+    >
+      <div className="chapter-num pointer-events-none absolute left-0 top-8 font-display text-[7rem] font-black leading-none md:text-[11rem] lg:top-10 lg:text-[15rem]">
+        {ch.num}
+      </div>
 
-        {/* контент */}
-        <div className="relative flex flex-col justify-center overflow-hidden px-5 py-14 md:px-14 lg:py-16">
-          <div className="chapter-num pointer-events-none absolute right-4 top-6 font-display text-[7rem] font-black leading-none md:text-[11rem]">
-            {ch.num}
-          </div>
-
-          <motion.div
-            key={ch.id + idx}
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-30%" }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="relative"
+      <div className="relative grid items-center gap-6 lg:grid-cols-12 lg:gap-10">
+        {/* сцена */}
+        <div className="order-1 lg:order-2 lg:col-span-7">
+          <div
+            className={`relative overflow-hidden rounded-xl border transition-colors duration-500 ${
+              isActive ? "border-accent/60" : "border-line"
+            }`}
           >
-            <div className="mb-4 flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.24em] text-muted">
-              <span className="text-accent">глава {ch.num}</span>
-              <span className="h-px w-10 bg-line" />
-              <span>{ch.meta}</span>
+            <div className="relative aspect-[16/9] lg:aspect-[16/8.4]">
+              <AnimatePresence mode="popLayout">
+                {ch.video && frame === 0 ? (
+                  <motion.video
+                    key="video"
+                    src={ch.video}
+                    poster={ch.visuals[0]}
+                    initial={{ opacity: 0, scale: 1.05 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <motion.img
+                    key={frame}
+                    src={ch.visuals[frame]}
+                    alt={ch.name}
+                    initial={{ opacity: 0, scale: 1.05 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="h-full w-full object-cover"
+                  />
+                )}
+              </AnimatePresence>
+              <span className="absolute left-3 top-3 rounded-full border border-line bg-bg/80 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.16em] backdrop-blur">
+                {ch.video && frame === 0 ? "▶ шоурил" : `кадр ${String(frame + 1).padStart(2, "0")}/${String(count).padStart(2, "0")}`}
+              </span>
             </div>
-
-            {/* мобильный визуал */}
-            <div className="mb-6 overflow-hidden rounded-xl border border-line lg:hidden">
-              {ch.video ? (
-                <video
-                  src={ch.video}
-                  poster={ch.visuals[0]}
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  onMouseEnter={(e) => e.currentTarget.play().catch(() => undefined)}
-                  className="aspect-[16/10] w-full object-cover"
-                />
-              ) : (
-                <img src={ch.visuals[0]} alt={ch.name} className="aspect-[16/10] w-full object-cover" />
-              )}
-            </div>
-
-            <h3 className="font-display text-[clamp(2.2rem,5.4vw,5rem)] font-black uppercase leading-[0.9] tracking-tight">
-              {ch.name}
-            </h3>
-            <p className="mt-5 max-w-md text-sm leading-relaxed text-muted md:text-base">{ch.desc}</p>
-
-            <div className="mt-6 flex flex-wrap gap-2">
-              {ch.chips.map((c) => (
-                <span
-                  key={c}
-                  className="rounded-full border border-line px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted transition-colors hover:border-accent hover:text-ink"
+            {/* миниатюры кадров */}
+            <div className="flex gap-2 border-t border-line bg-bg/70 p-2 backdrop-blur">
+              {ch.visuals.map((v, i) => (
+                <button
+                  key={v + i}
+                  onClick={() => setFrame(i)}
+                  data-cursor
+                  className={`relative h-10 w-16 shrink-0 overflow-hidden rounded-md border transition-all md:h-12 md:w-20 ${
+                    i === frame ? "border-accent opacity-100" : "border-line opacity-50 hover:opacity-90"
+                  }`}
+                  aria-label={`Кадр ${i + 1}`}
                 >
-                  {c}
-                </span>
+                  <img src={v} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  {ch.video && i === 0 && (
+                    <span className="absolute inset-0 grid place-items-center bg-bg/40">
+                      <Play size={12} className="text-accent" />
+                    </span>
+                  )}
+                </button>
               ))}
             </div>
+          </div>
+        </div>
 
-            <div className="mt-9 flex flex-wrap items-center gap-5">
-              <Magnetic>
-                <Link
-                  to={ch.to}
-                  data-cursor
-                  className="group inline-flex items-center gap-2.5 rounded-full bg-accent px-7 py-3.5 font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-accentink"
-                >
-                  открыть раздел
-                  <ArrowUpRight
-                    size={14}
-                    className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                  />
-                </Link>
-              </Magnetic>
-              <button
-                onClick={() => document.getElementById("works")?.scrollIntoView({ behavior: "smooth" })}
-                data-cursor
-                className="group inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted transition-colors hover:text-accent"
+        {/* текст */}
+        <div className="order-2 lg:order-1 lg:col-span-5">
+          <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.24em] text-muted">
+            <span className={isActive ? "text-accent" : ""}>глава {ch.num}</span>
+            <span className="h-px w-8 bg-line" />
+            <span>{ch.meta}</span>
+          </div>
+          <h3 className="mt-4 font-display text-[clamp(2rem,4.4vw,4.2rem)] font-black uppercase leading-[0.9] tracking-tight">
+            {ch.name}
+          </h3>
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-muted">{ch.desc}</p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {ch.chips.map((c) => (
+              <span
+                key={c}
+                className="rounded-full border border-line px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted transition-colors hover:border-accent hover:text-ink"
               >
-                кейсы ниже <span className="transition-transform duration-300 group-hover:translate-y-1">↓</span>
-              </button>
-            </div>
-          </motion.div>
+                {c}
+              </span>
+            ))}
+          </div>
+          <div className="mt-7">
+            <Magnetic>
+              <Link
+                to={ch.to}
+                data-cursor
+                className="group inline-flex items-center gap-2.5 rounded-full bg-accent px-7 py-3.5 font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-accentink"
+              >
+                открыть раздел
+                <ArrowUpRight
+                  size={14}
+                  className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                />
+              </Link>
+            </Magnetic>
+          </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
-function GuideChapters() {
-  const secRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: secRef, offset: ["start start", "end end"] });
+function FilmChapters() {
+  const rootRef = useRef<HTMLElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const tcRef = useRef<HTMLSpanElement>(null);
+  const phRef = useRef<HTMLDivElement>(null);
+  const [pinned, setPinned] = useState(false);
   const [active, setActive] = useState(0);
-  useMotionValueEvent(scrollYProgress, "change", (v) => {
-    setActive(Math.min(CHAPTERS.length - 1, Math.floor(v * CHAPTERS.length)));
-  });
+  const [frame, setFrame] = useState(0);
+  const startRef = useRef(0);
+  const amountRef = useRef(0);
+
+  // режим «плёнки»: пин только на широких экранах без reduced-motion
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const rm = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setPinned(mq.matches && !rm.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    rm.addEventListener("change", apply);
+    return () => {
+      mq.removeEventListener("change", apply);
+      rm.removeEventListener("change", apply);
+    };
+  }, []);
+
+  const setTimecode = useCallback((p: number) => {
+    const t = Math.min(45, p * 45);
+    const ss = Math.floor(t);
+    const ff = Math.floor((t % 1) * 25);
+    if (tcRef.current)
+      tcRef.current.textContent = `00:${String(ss).padStart(2, "0")}:${String(ff).padStart(2, "0")}`;
+    if (phRef.current) phRef.current.style.transform = `scaleX(${Math.min(1, p)})`;
+  }, []);
+
+  // GSAP-пин: вертикальный скролл крутит плёнку горизонтально
+  useLayoutEffect(() => {
+    if (!pinned) return;
+    const ctx = gsap.context(() => {
+      const track = trackRef.current;
+      if (!track) return;
+      const amount = () => Math.max(0, track.scrollWidth - window.innerWidth);
+      gsap.to(track, {
+        x: () => -amount(),
+        ease: "none",
+        scrollTrigger: {
+          trigger: rootRef.current,
+          start: "top top",
+          end: () => "+=" + amount(),
+          pin: true,
+          scrub: 0.7,
+          invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            startRef.current = self.start;
+            amountRef.current = self.end - self.start;
+            setTimecode(self.progress);
+            const idx = Math.min(CHAPTERS.length - 1, Math.floor(self.progress * CHAPTERS.length));
+            setActive((v) => (v === idx ? v : idx));
+          },
+        },
+      });
+    }, rootRef);
+    const t = setTimeout(() => ScrollTrigger.refresh(), 350);
+    const onResize = () => ScrollTrigger.refresh();
+    window.addEventListener("resize", onResize);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", onResize);
+      ctx.revert();
+    };
+  }, [pinned, setTimecode]);
+
+  // мобильный трек: следим за свайпом
+  const onTrackScroll = useCallback(() => {
+    const el = trackRef.current;
+    if (!el || pinned) return;
+    const max = Math.max(1, el.scrollWidth - el.clientWidth);
+    const p = el.scrollLeft / max;
+    setTimecode(p);
+    const idx = Math.min(CHAPTERS.length - 1, Math.round(p * (CHAPTERS.length - 1)));
+    setActive((v) => (v === idx ? v : idx));
+  }, [pinned, setTimecode]);
+
+  // автопрокрутка кадров активной панели
+  useEffect(() => {
+    setFrame(0);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = setInterval(() => {
+      setFrame((f) => (f + 1) % CHAPTERS[active].visuals.length);
+    }, 2800);
+    return () => clearInterval(id);
+  }, [active]);
+
+  const goTo = (i: number) => {
+    if (pinned) {
+      const top = startRef.current + (i / Math.max(1, CHAPTERS.length - 1)) * amountRef.current;
+      window.scrollTo({ top, behavior: "smooth" });
+    } else {
+      const el = trackRef.current?.children[i] as HTMLElement | undefined;
+      el?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+    }
+  };
 
   return (
-    <section ref={secRef} id="services" className="relative border-t border-line">
-      {/* рельса прогресса */}
-      <div className="absolute left-5 top-1/2 z-20 hidden -translate-y-1/2 flex-col items-center gap-5 xl:flex">
+    <section
+      ref={rootRef}
+      id="services"
+      className="relative border-y border-line bg-bg2/50 lg:h-svh lg:overflow-hidden"
+    >
+      <div
+        ref={trackRef}
+        onScroll={onTrackScroll}
+        className="no-scrollbar relative flex w-max snap-x snap-mandatory items-stretch overflow-x-auto lg:h-full lg:snap-none lg:overflow-visible"
+      >
+        {/* перфорация плёнки едет вместе с треком */}
+        <Sprockets count={170} className="absolute inset-x-0 top-2 py-1 opacity-70" />
+        <Sprockets count={170} className="absolute inset-x-0 bottom-[3.4rem] hidden py-1 opacity-70 lg:flex" />
+
         {CHAPTERS.map((ch, i) => (
-          <button
-            key={ch.id}
-            onClick={() =>
-              document.getElementById(`chapter-${ch.id}`)?.scrollIntoView({ behavior: "smooth" })
-            }
-            className="group flex flex-col items-center gap-1.5"
-            aria-label={ch.name}
-          >
-            <span
-              className={`font-mono text-[10px] tracking-[0.2em] transition-colors ${
-                i === active ? "text-accent" : "text-muted group-hover:text-ink"
-              }`}
-            >
-              {ch.num}
-            </span>
-            <span
-              className={`w-px transition-all duration-500 ${
-                i === active ? "h-10 bg-accent" : "h-5 bg-line"
-              }`}
-            />
-          </button>
+          <FilmPanel key={ch.id} ch={ch} idx={i} active={active} frame={frame} setFrame={setFrame} />
         ))}
+
+        {/* финальный кадр */}
+        <article className="relative flex h-[64svh] w-[88vw] shrink-0 snap-start flex-col items-center justify-center px-6 lg:h-full lg:w-[46vw]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted">конец плёнки услуг</p>
+          <button
+            onClick={() => document.getElementById("works")?.scrollIntoView({ behavior: "smooth" })}
+            data-cursor
+            className="group mt-5 text-center"
+          >
+            <span className="text-stroke-accent block font-display text-[clamp(2.6rem,6vw,5.4rem)] font-black uppercase leading-[0.9] tracking-tight transition-colors group-hover:text-accent">
+              работы
+            </span>
+            <span className="mt-3 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted transition-colors group-hover:text-accent">
+              избранные кейсы <span className="transition-transform duration-300 group-hover:translate-y-1">↓</span>
+            </span>
+          </button>
+        </article>
       </div>
 
-      {CHAPTERS.map((ch, i) => (
-        <div key={ch.id} id={`chapter-${ch.id}`}>
-          <ChapterBlock ch={ch} idx={i} />
+      {/* таймлайн-скраббер */}
+      <div className="relative z-30 border-t border-line bg-bg/85 backdrop-blur lg:absolute lg:inset-x-0 lg:bottom-0">
+        <div className="mx-auto flex max-w-[1600px] items-center gap-4 px-5 py-3 md:px-10">
+          <span ref={tcRef} className="w-20 font-mono text-[11px] tabular-nums tracking-[0.14em] text-accent">
+            00:00:00
+          </span>
+          <div className="relative h-[3px] flex-1 overflow-hidden rounded-full bg-line">
+            <div ref={phRef} className="absolute inset-0 origin-left rounded-full bg-accent" style={{ transform: "scaleX(0)" }} />
+          </div>
+          <div className="flex items-center gap-1">
+            {CHAPTERS.map((c, i) => (
+              <button
+                key={c.id}
+                onClick={() => goTo(i)}
+                data-cursor
+                aria-label={c.name}
+                className={`rounded-full px-2.5 py-1 font-mono text-[10px] tracking-[0.12em] transition-all ${
+                  i === active ? "bg-accent text-accentink" : "text-muted hover:text-ink"
+                }`}
+              >
+                {c.num}
+              </button>
+            ))}
+          </div>
+          <span className="hidden font-mono text-[10px] uppercase tracking-[0.2em] text-muted sm:block">
+            {pinned ? "скролль — плёнка едет →" : "свайпай плёнку →"}
+          </span>
         </div>
-      ))}
+      </div>
     </section>
   );
 }
@@ -1036,7 +1144,7 @@ export default function Home() {
   return (
     <div ref={rootRef}>
       <HeroBoard />
-      <GuideChapters />
+      <FilmChapters />
       <Works />
       <About />
       <Contact />

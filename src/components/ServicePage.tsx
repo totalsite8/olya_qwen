@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowUpRight } from "lucide-react";
-import { Marquee, SectionHead } from "./ui";
+import { Marquee, SectionHead, Sprockets } from "./ui";
 import { MEDIA } from "../data/media";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -111,6 +111,8 @@ export function PageHero({
           ))}
         </motion.div>
       </div>
+
+      <Sprockets count={90} className="absolute inset-x-0 bottom-1 py-1 opacity-50" />
     </div>
   );
 }
@@ -118,7 +120,9 @@ export function PageHero({
 /* ---------- Бегущая строка раздела ---------- */
 export function PageMarquee({ items }: { items: string[] }) {
   return (
-    <div className="border-y border-line bg-surface/50 py-5">
+    <div className="relative border-y border-line bg-surface/50 py-5">
+      <Sprockets count={90} className="absolute inset-x-0 -top-2.5 py-0.5 opacity-40" />
+      <Sprockets count={90} className="absolute inset-x-0 -bottom-2.5 py-0.5 opacity-40" />
       <Marquee duration={26}>
         {items.map((t) => (
           <span key={t} className="flex items-center">

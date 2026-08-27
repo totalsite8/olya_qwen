@@ -130,6 +130,17 @@ export function FadeIn({
   );
 }
 
+/** Перфорация киноплёнки — фирменный мотив сайта */
+export function Sprockets({ count = 80, className = "" }: { count?: number; className?: string }) {
+  return (
+    <div aria-hidden className={`pointer-events-none flex items-center justify-between gap-3 px-5 ${className}`}>
+      {Array.from({ length: count }).map((_, i) => (
+        <span key={i} className="h-2 w-3.5 shrink-0 rounded-[3px] border border-line bg-bg/50" />
+      ))}
+    </div>
+  );
+}
+
 /** Счётчик с пружинным значением */
 export function useHoverLift() {
   const y = useMotionValue(0);
