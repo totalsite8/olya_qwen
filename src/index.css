@@ -51,7 +51,7 @@
   --color-warn: var(--warn);
   --color-ok: var(--ok);
   --font-display: "Anton", "Golos Text", sans-serif;
-  --font-serifit: "Cormorant Garamond", "Georgia", serif;
+  --font-accent: "Cormorant Garamond", "Georgia", serif;
   --font-body: "Golos Text", "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", "Consolas", monospace;
 }
@@ -59,6 +59,7 @@
 /* ============ База ============ */
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 html,
 body {
@@ -265,6 +266,17 @@ input[type="range"]::-moz-range-thumb {
   transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
 }
 .index-row:hover .index-arrow {
+  transform: translate(6px, -6px);
+  opacity: 1;
+}
+.index-row-active .index-name {
+  color: var(--accent);
+  transform: translateX(0.35em);
+}
+.index-row-active .index-num {
+  color: var(--accent);
+}
+.index-row-active .index-arrow {
   transform: translate(6px, -6px);
   opacity: 1;
 }
