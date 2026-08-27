@@ -51,7 +51,7 @@
   --color-warn: var(--warn);
   --color-ok: var(--ok);
   --font-display: "Anton", "Golos Text", sans-serif;
-  --font-serifit: "Cormorant Garamond", "Georgia", serif;
+  --font-accent: "Cormorant Garamond", "Georgia", serif;
   --font-body: "Golos Text", "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", "Consolas", monospace;
 }
