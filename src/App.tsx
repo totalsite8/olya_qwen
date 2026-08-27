@@ -9,6 +9,10 @@ import ParticleField from "./components/ParticleField";
 import ScrollProgress from "./components/ScrollProgress";
 import Home from "./pages/Home";
 import Calculator from "./pages/Calculator";
+import Video from "./pages/Video";
+import Neuro from "./pages/Neuro";
+import Presentations from "./pages/Presentations";
+import Design from "./pages/Design";
 import { useStore, type BeforeInstallPromptEvent } from "./store/useStore";
 
 /* ===== PWA: установка по beforeinstallprompt (мобильные) ===== */
@@ -119,6 +123,38 @@ function Shell() {
             element={
               <PageWrap>
                 <Calculator />
+              </PageWrap>
+            }
+          />
+          <Route
+            path="/video"
+            element={
+              <PageWrap>
+                <Video />
+              </PageWrap>
+            }
+          />
+          <Route
+            path="/neuro"
+            element={
+              <PageWrap>
+                <Neuro />
+              </PageWrap>
+            }
+          />
+          <Route
+            path="/presentations"
+            element={
+              <PageWrap>
+                <Presentations />
+              </PageWrap>
+            }
+          />
+          <Route
+            path="/design"
+            element={
+              <PageWrap>
+                <Design />
               </PageWrap>
             }
           />

@@ -11,15 +11,15 @@
   "theme_color": "#131210",
   "icons": [
     {
-      "src": "https://image.qwenlm.ai/generated-images/97c5f570-7793-4c8c-a840-aed5004268ca/_result.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "https://cdn.jsdelivr.net/gh/totalsite8/olya_qwen@cost-calculator-for-services-b3ad4/upload/assets/02_alfa/alfa-mascots-hero.webp",
+      "sizes": "1024x1024",
+      "type": "image/webp",
       "purpose": "any"
     },
     {
-      "src": "https://image.qwenlm.ai/generated-images/97c5f570-7793-4c8c-a840-aed5004268ca/_result.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "https://cdn.jsdelivr.net/gh/totalsite8/olya_qwen@cost-calculator-for-services-b3ad4/upload/assets/02_alfa/alfa-mascots-hero.webp",
+      "sizes": "1024x1024",
+      "type": "image/webp",
       "purpose": "maskable"
     }
   ]

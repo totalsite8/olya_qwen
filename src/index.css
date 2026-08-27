@@ -13,6 +13,7 @@
   --accent: #ff4d1f;
   --accent-2: #6d7bff;
   --accent-ink: #131210;
+  --accent-glow: rgba(255, 77, 31, 0.11);
   --warn: #f5b841;
   --ok: #7fd6a4;
   --img-dim: 0.92;
@@ -29,6 +30,7 @@
   --accent: #e8400f;
   --accent-2: #3d4edb;
   --accent-ink: #f7f5ef;
+  --accent-glow: rgba(232, 64, 15, 0.09);
   --warn: #a86a00;
   --ok: #1f7a4d;
   --img-dim: 1;
@@ -48,7 +50,8 @@
   --color-accentink: var(--accent-ink);
   --color-warn: var(--warn);
   --color-ok: var(--ok);
-  --font-display: "Unbounded", "Golos Text", sans-serif;
+  --font-display: "Anton", "Golos Text", sans-serif;
+  --font-serifit: "Cormorant Garamond", "Georgia", serif;
   --font-body: "Golos Text", "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", "Consolas", monospace;
 }
@@ -124,6 +127,13 @@ img {
   background-image: linear-gradient(var(--line-soft) 1px, transparent 1px),
     linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
   background-size: 72px 72px;
+  /* полотно «дышит» в сторону курсора (--mx/--my ставит Cursor) */
+  background-position: calc(50% + var(--mx, 0) * 18px) calc(50% + var(--my, 0) * 14px);
+}
+
+.mx-drift {
+  transform: translate(calc(var(--mx, 0) * -26px), calc(var(--my, 0) * -18px));
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .marquee-track {
@@ -234,6 +244,49 @@ input[type="range"]::-moz-range-thumb {
 }
 .no-scrollbar {
   scrollbar-width: none;
+}
+
+/* ============ Индекс-строки hero ============ */
+.index-row .index-name {
+  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), color 0.35s ease;
+}
+.index-row:hover .index-name {
+  transform: translateX(0.35em);
+  color: var(--accent);
+}
+.index-row .index-num {
+  transition: color 0.35s ease, -webkit-text-stroke-color 0.35s ease;
+}
+.index-row:hover .index-num {
+  color: var(--accent);
+  -webkit-text-stroke-color: var(--accent);
+}
+.index-row .index-arrow {
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+.index-row:hover .index-arrow {
+  transform: translate(6px, -6px);
+  opacity: 1;
+}
+.index-row .index-desc {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.index-row:hover .index-desc,
+.index-row:focus-visible .index-desc {
+  grid-template-rows: 1fr;
+}
+.index-row .index-desc > span {
+  overflow: hidden;
+  display: block;
+}
+
+/* Гигантский контурный номер главы */
+.chapter-num {
+  color: transparent;
+  -webkit-text-stroke: 1.5px color-mix(in srgb, var(--ink) 22%, transparent);
+  transition: -webkit-text-stroke-color 0.4s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {

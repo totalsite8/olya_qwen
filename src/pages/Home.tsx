@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useMotionValue, useSpring } from "framer-motion";
-import { ArrowUpRight, Plus, X } from "lucide-react";
+import { ArrowUpRight, Play, Plus, X } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { FILTERS, PORTRAIT, WORKS, type Work } from "../data/works";
+import { MEDIA } from "../data/media";
 import { SERVICES, CATEGORIES } from "../data/services";
-import { fmtRub } from "../lib/format";
 import { Magnetic, Marquee, OrbitBadge, SectionHead } from "../components/ui";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -109,10 +109,27 @@ function Hero() {
           scrollTrigger: { trigger: rootRef.current, start: "top top", end: "bottom top", scrub: true },
         }
       );
-      gsap.to(".hero-ghost", {
-        yPercent: -30,
-        rotate: 40,
+      gsap.to(".hero-bgimg", {
+        yPercent: 10,
         ease: "none",
+        scrollTrigger: { trigger: rootRef.current, start: "top top", end: "bottom top", scrub: true },
+      });
+      // карточки плывут с разной скоростью + лёгкий вход
+      gsap.fromTo(
+        ".hero-card",
+        { autoAlpha: 0, y: 30 },
+        { autoAlpha: 1, y: 0, duration: 1, stagger: 0.14, ease: "power3.out", delay: 1.1 }
+      );
+      gsap.to(".hero-card-1", {
+        yPercent: -46, rotate: 10, ease: "none",
+        scrollTrigger: { trigger: rootRef.current, start: "top top", end: "bottom top", scrub: true },
+      });
+      gsap.to(".hero-card-2", {
+        yPercent: -26, rotate: -10, ease: "none",
+        scrollTrigger: { trigger: rootRef.current, start: "top top", end: "bottom top", scrub: true },
+      });
+      gsap.to(".hero-card-3", {
+        yPercent: -60, rotate: 6, ease: "none",
         scrollTrigger: { trigger: rootRef.current, start: "top top", end: "bottom top", scrub: true },
       });
     }, rootRef);
@@ -121,11 +138,16 @@ function Hero() {
 
   return (
     <section ref={rootRef} className="grid-bg relative overflow-hidden pb-16 pt-28 md:pt-36">
-      <div
-        aria-hidden
-        className="hero-ghost pointer-events-none absolute -right-24 top-10 select-none font-display text-[26rem] font-black leading-none text-linesoft"
-      >
-        ✷
+      {/* Фирменный абстрактный фон из макета */}
+      <div aria-hidden className="hero-bgwrap pointer-events-none absolute inset-0">
+        <img src={MEDIA.heroBg} alt="" className="hero-bgimg absolute -top-[14%] h-[134%] w-full object-cover opacity-[0.4]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-bg/40 via-bg/30 to-bg" />
+      </div>
+      {/* Летающие карточки проектов из первого экрана макета */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 hidden lg:block">
+        <img src={MEDIA.heroCardAlfa} alt="" className="hero-card hero-card-1 absolute left-[56%] top-24 w-36 rotate-6 rounded-xl border border-line object-cover shadow-2xl" />
+        <img src={MEDIA.heroCardEco} alt="" className="hero-card hero-card-2 absolute right-8 top-[42%] w-32 -rotate-6 rounded-xl border border-line object-cover shadow-2xl" />
+        <img src={MEDIA.heroCardData} alt="" className="hero-card hero-card-3 absolute bottom-24 left-[62%] w-32 rotate-3 rounded-xl border border-line object-cover shadow-2xl" />
       </div>
 
       <div className="relative mx-auto max-w-[1600px] px-5 md:px-10">
@@ -193,7 +215,7 @@ function Hero() {
             листай ↓
           </span>
           <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
-            06 кейсов · 20 направлений услуг
+            09 кейсов · 20 направлений услуг
           </span>
         </div>
       </div>
@@ -247,17 +269,36 @@ function WorkCard({ work, onOpen }: { work: Work; onOpen: (w: Work) => void }) {
       className="group relative block h-full w-full overflow-hidden border border-line bg-card text-left will-change-transform"
     >
       <div className={`relative overflow-hidden ${work.ratio}`}>
-        <img
-          src={work.image}
-          alt={work.title}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.06]"
-        />
+        {work.video ? (
+          <video
+            src={work.video}
+            poster={work.poster}
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            onMouseEnter={(e) => e.currentTarget.play().catch(() => undefined)}
+            onMouseLeave={(e) => e.currentTarget.pause()}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <img
+            src={work.image}
+            alt={work.title}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.06]"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-bg/85 via-bg/10 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-100" />
 
         <span className="absolute left-4 top-4 rounded-full border border-line bg-bg/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] backdrop-blur-sm">
           {work.index} · {work.category}
         </span>
+        {work.video && (
+          <span className="absolute left-1/2 top-1/2 grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-bg/70 text-ink backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+            <Play size={20} className="ml-0.5" />
+          </span>
+        )}
         <span
           className={`absolute right-4 top-4 grid h-10 w-10 translate-y-2 place-items-center rounded-full bg-accent text-accentink opacity-0 transition-all duration-400 group-hover:translate-y-0 group-hover:opacity-100`}
         >
@@ -319,7 +360,20 @@ function WorkModal({ work, onClose }: { work: Work; onClose: () => void }) {
             <X size={16} />
           </button>
           <div className="relative aspect-[4/3] overflow-hidden md:aspect-auto md:min-h-[480px]">
-            <img src={work.image} alt={work.title} className="h-full w-full object-cover" />
+            {work.video ? (
+              <video
+                src={work.video}
+                poster={work.poster}
+                controls
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="h-full w-full bg-bg object-cover"
+              />
+            ) : (
+              <img src={work.image} alt={work.title} className="h-full w-full object-cover" />
+            )}
           </div>
           <div className="flex flex-col gap-6 p-7 md:p-10">
             <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
@@ -340,6 +394,30 @@ function WorkModal({ work, onClose }: { work: Work; onClose: () => void }) {
                 </span>
               ))}
             </div>
+
+            {work.gallery.length > 1 && (
+              <div>
+                <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
+                  Материалы кейса · {work.gallery.length}
+                </div>
+                <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+                  {work.gallery.map((g, gi) => (
+                    <figure key={g.src + gi} className="shrink-0">
+                      <img
+                        src={g.src}
+                        alt={`${work.title} — ${g.cap}`}
+                        loading="lazy"
+                        className="h-20 w-28 rounded-lg border border-line object-cover transition-transform duration-300 hover:scale-105 md:h-24 md:w-36"
+                      />
+                      <figcaption className="mt-1 w-28 truncate font-mono text-[9px] uppercase tracking-wide text-muted md:w-36">
+                        {g.cap}
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="mt-auto grid grid-cols-3 divide-x divide-line border-t border-line pt-5">
               {work.metrics.map((m) => (
                 <div key={m.k} className="px-3 first:pl-0">
@@ -424,6 +502,13 @@ const CAP_DESC: Record<string, string> = {
     "Питч-деки, коммерческие предложения, отчёты. Нарратив и инфографика, а не «красивые слайды». База проекта — концепция, стиль, мастер-шаблон.",
 };
 
+const CAT_PAGE: Record<string, { to: string; label: string }> = {
+  design: { to: "/design", label: "страница: дизайн и SMM" },
+  neuro: { to: "/neuro", label: "страница: нейрогенерации" },
+  video: { to: "/video", label: "страница: видео и моушн" },
+  pres: { to: "/presentations", label: "страница: презентации" },
+};
+
 function Capabilities() {
   const [open, setOpen] = useState<string | null>("design");
 
@@ -443,7 +528,6 @@ function Capabilities() {
         <div className="border-t border-line">
           {CATEGORIES.filter((c) => c.id !== "extra").map((cat, i) => {
             const items = SERVICES.filter((s) => s.cat === cat.id);
-            const minPrice = Math.min(...items.map((s) => s.prices.RU));
             const isOpen = open === cat.id;
             return (
               <div key={cat.id} className="border-b border-line" data-reveal>
@@ -464,7 +548,7 @@ function Capabilities() {
                       {cat.title}
                     </span>
                     <span className="mt-2 hidden font-mono text-[11px] uppercase tracking-[0.16em] text-muted md:block">
-                      {cat.desc} · от {fmtRub(minPrice)}
+                      {cat.desc}
                     </span>
                   </span>
                   <span className="col-span-2 flex justify-end md:col-span-2">
@@ -496,18 +580,17 @@ function Capabilities() {
                           key={s.id}
                           className="rounded-full border border-line px-3 py-1.5 font-mono text-[11px] text-muted transition-colors hover:border-accent hover:text-ink"
                         >
-                          {s.name} · <span className="text-ink">{fmtRub(s.prices.RU)}</span>
-                          {s.unit !== "шт" && s.unit !== "проект" ? `/${s.unit}` : ""}
+                          {s.name}
                         </span>
                       ))}
                     </div>
-                    <div className="md:col-span-12 md:col-start-2">
+                    <div className="flex flex-wrap items-center gap-6 md:col-span-12 md:col-start-2">
                       <Link
-                        to="/calculator"
-                        className="group inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-accent"
+                        to={CAT_PAGE[cat.id]?.to ?? "/calculator"}
+                        className="group inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-accentink transition-transform hover:scale-[1.03]"
                       >
-                        посчитать в калькуляторе
-                        <ArrowUpRight size={14} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        {CAT_PAGE[cat.id]?.label ?? "направление"}
+                        <ArrowUpRight size={13} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                       </Link>
                     </div>
                   </div>
@@ -652,10 +735,9 @@ function TermsTicker() {
   const items = [
     "3 круга правок включены",
     "исходники — бесплатно",
-    "предоплата 50/50",
-    "срочность от +20%",
     "рынки RU · US · EU",
-    "НДС: самозанятость 6%",
+    "ответ в течение дня",
+    "дизайн × нейро × видео",
   ];
   return (
     <div className="border-y border-line bg-accent py-3.5 text-accentink">
@@ -675,11 +757,9 @@ function TermsTicker() {
 function Contact() {
   return (
     <section id="contact" className="relative overflow-hidden py-24 md:py-40">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-20 bottom-0 select-none font-display text-[22rem] font-black leading-none text-linesoft"
-      >
-        ✷
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <img src={MEDIA.footerBg} alt="" className="h-full w-full object-cover opacity-35" />
+        <div className="absolute inset-0 bg-gradient-to-b from-bg via-bg/40 to-bg/80" />
       </div>
       <div className="relative mx-auto max-w-[1600px] px-5 md:px-10">
         <div className="mb-4 font-mono text-[11px] uppercase tracking-[0.24em] text-muted" data-reveal>
@@ -757,12 +837,9 @@ function Footer() {
         <span className="hidden font-mono text-[11px] uppercase tracking-[0.16em] text-muted md:block">
           дизайн + код — без шаблонов
         </span>
-        <Link
-          to="/calculator"
-          className="group font-mono text-[11px] uppercase tracking-[0.16em] text-muted transition-colors hover:text-accent"
-        >
-          внутренний инструмент: калькулятор <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
-        </Link>
+        <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+          рынки RU · US · EU
+        </span>
       </div>
     </footer>
   );
