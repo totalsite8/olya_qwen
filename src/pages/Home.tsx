@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   AnimatePresence,
   motion,
@@ -75,16 +75,93 @@ const CHAPTERS: Chapter[] = [
   },
 ];
 
-/* ================= HERO-ИНДЕКС ================= */
-function HeroIndex() {
+/* ================= КАДРЫ-МАТЕРИАЛЫ ДЛЯ ПУЛЬТА ================= */
+interface Frame {
+  id: string;
+  tag: string | null;
+  to: string;
+  src: string;
+  label: string;
+  cls: string;
+  aspect: string;
+  rot: number;
+  z: number;
+  video?: string;
+  speed: string;
+}
+
+const FRAMES: Frame[] = [
+  {
+    id: "video",
+    tag: "01",
+    to: "/video",
+    src: MEDIA.videoPoster,
+    video: MEDIA.showreel,
+    label: "Шоурил ’26",
+    cls: "left-0 top-[2%] w-[52%]",
+    aspect: "aspect-video",
+    rot: -3,
+    z: 30,
+    speed: "hb-a",
+  },
+  {
+    id: "neuro",
+    tag: "02",
+    to: "/neuro",
+    src: MEDIA.alfaMascotsHero,
+    label: "Альфа · персонажи",
+    cls: "right-0 top-0 w-[30%]",
+    aspect: "aspect-square",
+    rot: 4,
+    z: 20,
+    speed: "hb-b",
+  },
+  {
+    id: "presentations",
+    tag: "03",
+    to: "/presentations",
+    src: MEDIA.cubeCover,
+    label: "house CUBE · дек",
+    cls: "left-[19%] bottom-[1%] w-[37%]",
+    aspect: "aspect-video",
+    rot: -2,
+    z: 10,
+    speed: "hb-c",
+  },
+  {
+    id: "design",
+    tag: "04",
+    to: "/design",
+    src: MEDIA.domGrid,
+    label: "Домашний · SMM",
+    cls: "right-[2%] bottom-[3%] w-[24%]",
+    aspect: "aspect-[2/3]",
+    rot: -5,
+    z: 20,
+    speed: "hb-d",
+  },
+  {
+    id: "eco",
+    tag: null,
+    to: "/design",
+    src: MEDIA.ecoAd,
+    label: "Ecozavr · упаковка",
+    cls: "left-[3%] top-[38%] w-[19%]",
+    aspect: "aspect-[3/4]",
+    rot: 6,
+    z: 5,
+    speed: "hb-e",
+  },
+];
+
+/* ================= HERO-ПУЛЬТ ================= */
+function HeroBoard() {
   const rootRef = useRef<HTMLElement>(null);
-  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const [active, setActive] = useState<string | null>(null);
   const [fine, setFine] = useState(false);
-  const px = useMotionValue(-400);
-  const py = useMotionValue(-400);
-  const sx = useSpring(px, { stiffness: 140, damping: 18, mass: 0.6 });
-  const sy = useSpring(py, { stiffness: 140, damping: 18, mass: 0.6 });
-  const rot = useSpring(0, { stiffness: 120, damping: 14 });
+  const movedRef = useRef(false);
 
   useEffect(() => {
     setFine(window.matchMedia("(pointer: fine)").matches);
@@ -92,218 +169,281 @@ function HeroIndex() {
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
-      // строки индекса разъезжаются при скролле hero
-      gsap.to(".idx-drift-a", {
-        xPercent: -6,
-        ease: "none",
-        scrollTrigger: { trigger: rootRef.current, start: "top top", end: "bottom top", scrub: true },
-      });
-      gsap.to(".idx-drift-b", {
-        xPercent: 5,
-        ease: "none",
-        scrollTrigger: { trigger: rootRef.current, start: "top top", end: "bottom top", scrub: true },
-      });
-      gsap.to(".hero-ghost", {
-        yPercent: -34,
-        rotate: 120,
-        ease: "none",
-        scrollTrigger: { trigger: rootRef.current, start: "top top", end: "bottom top", scrub: true },
-      });
-      gsap.to(".hero-bgimg", {
-        yPercent: 12,
-        ease: "none",
-        scrollTrigger: { trigger: rootRef.current, start: "top top", end: "bottom top", scrub: true },
-      });
-      gsap.to(".hero-title", {
-        yPercent: -8,
-        ease: "none",
-        scrollTrigger: { trigger: rootRef.current, start: "top top", end: "bottom top", scrub: true },
-      });
+      const st = { trigger: rootRef.current, start: "top top", end: "bottom top", scrub: true };
+      gsap.to(".hero-bgimg", { yPercent: 16, ease: "none", scrollTrigger: st });
+      gsap.to(".hero-title", { yPercent: -9, ease: "none", scrollTrigger: st });
+      gsap.to(".hb-a", { yPercent: -9, ease: "none", scrollTrigger: st });
+      gsap.to(".hb-b", { yPercent: 11, ease: "none", scrollTrigger: st });
+      gsap.to(".hb-c", { yPercent: -13, ease: "none", scrollTrigger: st });
+      gsap.to(".hb-d", { yPercent: 9, ease: "none", scrollTrigger: st });
+      gsap.to(".hb-e", { yPercent: 16, rotate: 14, ease: "none", scrollTrigger: st });
+      gsap.to(".board-hint", { autoAlpha: 0, ease: "none", scrollTrigger: st });
     }, rootRef);
     return () => ctx.revert();
   }, []);
 
-  const onMove = (e: React.MouseEvent) => {
-    if (!fine) return;
-    const r = rootRef.current?.getBoundingClientRect();
-    if (!r) return;
-    px.set(e.clientX - r.left);
-    py.set(e.clientY - r.top);
-    const vx = e.movementX;
-    rot.set(Math.max(-7, Math.min(7, vx * 0.6)));
+  const open = (to: string) => {
+    if (!movedRef.current) navigate(to);
+  };
+
+  const frameInner = (f: Frame, mobile = false) => {
+    const isActive = active === f.id;
+    return (
+      <div
+        className={`relative overflow-hidden rounded-xl border bg-card shadow-2xl transition-colors duration-300 ${
+          isActive && !mobile ? "border-accent" : "border-line"
+        } ${f.aspect}`}
+      >
+        {f.video ? (
+          <video
+            src={f.video}
+            poster={f.src}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <img
+            src={f.src}
+            alt={f.label}
+            loading={mobile ? "lazy" : "eager"}
+            className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.06]"
+          />
+        )}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg/70 via-transparent to-transparent opacity-80" />
+        {f.video && (
+          <span className="absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-full bg-bg/80 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.14em] backdrop-blur">
+            <Play size={9} className="text-accent" /> live
+          </span>
+        )}
+        {f.tag && (
+          <span className="absolute right-2.5 top-2.5 rounded-full border border-line bg-bg/80 px-2 py-0.5 font-mono text-[9px] tracking-[0.18em] text-muted backdrop-blur">
+            /{f.tag}
+          </span>
+        )}
+        <div
+          className={`absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-bg/85 px-3 py-2 backdrop-blur transition-transform duration-300 ${
+            isActive && !mobile ? "translate-y-0" : mobile ? "translate-y-0" : "translate-y-full group-hover:translate-y-0"
+          }`}
+        >
+          <span className="truncate font-mono text-[9px] uppercase tracking-[0.16em] text-muted">{f.label}</span>
+          <span className="flex shrink-0 items-center gap-1 font-mono text-[9px] uppercase tracking-[0.16em] text-accent">
+            открыть <ArrowUpRight size={10} />
+          </span>
+        </div>
+      </div>
+    );
   };
 
   return (
     <section
       ref={rootRef}
-      onMouseMove={onMove}
-      onMouseLeave={() => setHoverIdx(null)}
-      className="relative min-h-svh overflow-hidden pb-10 pt-28 md:pt-32"
+      onMouseLeave={() => setActive(null)}
+      className="relative flex min-h-svh flex-col overflow-hidden pt-24 lg:h-svh lg:min-h-[680px]"
     >
       {/* фон макета */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <img
           src={MEDIA.heroBg}
           alt=""
-          className="hero-bgimg absolute -top-[12%] h-[130%] w-full object-cover opacity-[0.36]"
+          className="hero-bgimg absolute -top-[12%] h-[130%] w-full object-cover opacity-[0.34]"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-bg/50 via-bg/25 to-bg" />
+        <div className="absolute inset-0 bg-gradient-to-b from-bg/55 via-bg/25 to-bg" />
       </div>
-      {/* призрачная звезда */}
-      <div
+      {/* живой акцент */}
+      <span
         aria-hidden
-        className="hero-ghost pointer-events-none absolute -right-[6%] top-6 select-none font-display text-[38vw] leading-none text-linesoft md:text-[24rem]"
+        className="spin-slow pointer-events-none absolute left-[42%] top-[14%] hidden text-4xl text-accent/50 lg:block"
       >
         ✷
-      </div>
+      </span>
 
-      <div className="relative mx-auto max-w-[1600px] px-5 md:px-10">
-        {/* верхняя строка */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-10 flex flex-wrap items-center gap-4 font-mono text-[11px] uppercase tracking-[0.24em] text-muted"
-        >
-          <span className="rounded-full border border-line px-3 py-1.5">Портфолио — 2026</span>
-          <span className="hidden h-px w-16 bg-line sm:block" />
-          <span>проводник по услугам</span>
-          <span className="ml-auto hidden items-center gap-3 md:flex">
-            <span className="ping-dot inline-block h-2 w-2 rounded-full bg-ok" />
-            открыта к проектам
-          </span>
-        </motion.div>
+      <div className="relative mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-10 px-5 pb-8 md:px-10 lg:grid-cols-12 lg:gap-8 lg:pb-20">
+        {/* ЛЕВО: индекс-проводник */}
+        <div className="flex flex-col justify-center lg:col-span-5">
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[10px] uppercase tracking-[0.22em] text-muted"
+          >
+            <span className="rounded-full border border-line px-3 py-1">Портфолио — 2026</span>
+            <span>проводник по услугам</span>
+            <span className="flex items-center gap-2">
+              <span className="ping-dot inline-block h-1.5 w-1.5 rounded-full bg-ok" />
+              открыта к проектам
+            </span>
+          </motion.div>
 
-        {/* заголовок */}
-        <h1 className="hero-title font-display font-black uppercase leading-[0.84] tracking-tight">
-          <span className="block overflow-hidden">
-            <motion.span
-              initial={{ y: "112%" }}
-              animate={{ y: 0 }}
-              transition={{ duration: 1.05, ease: [0.16, 1, 0.3, 1] }}
-              className="block text-[clamp(3.4rem,12.5vw,11.5rem)]"
-            >
-              Ольга
-            </motion.span>
-          </span>
-          <span className="block overflow-hidden">
-            <motion.span
-              initial={{ y: "112%" }}
-              animate={{ y: 0 }}
-              transition={{ duration: 1.05, delay: 0.09, ease: [0.16, 1, 0.3, 1] }}
-              className="text-stroke block text-[clamp(2.3rem,8.6vw,7.6rem)]"
-            >
-              Бакушкина
-            </motion.span>
-          </span>
-        </h1>
-
-        <motion.p
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-5 font-accent text-[clamp(1.25rem,2.6vw,2rem)] italic text-muted"
-        >
-          наведи на направление — увидишь, что внутри ↓
-        </motion.p>
-
-        {/* индекс направлений */}
-        <div className="mt-12 border-t border-line md:mt-16">
-          {CHAPTERS.map((ch, i) => (
-            <motion.div
-              key={ch.id}
-              initial={{ opacity: 0, y: 44 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.5 + i * 0.09, ease: [0.16, 1, 0.3, 1] }}
-              className={i % 2 ? "idx-drift-b" : "idx-drift-a"}
-            >
-              <Link
-                to={ch.to}
-                data-cursor
-                onMouseEnter={() => setHoverIdx(i)}
-                onFocus={() => setHoverIdx(i)}
-                onMouseLeave={() => setHoverIdx((v) => (v === i ? null : v))}
-                className="index-row group relative block border-b border-line py-5 md:py-7"
+          <h1 className="hero-title font-display font-black uppercase leading-[0.86] tracking-tight">
+            <span className="block overflow-hidden">
+              <motion.span
+                initial={{ y: "112%" }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.95, ease: [0.16, 1, 0.3, 1] }}
+                className="block text-[clamp(2.9rem,6.2vw,6.4rem)]"
               >
-                <div className="flex items-baseline gap-5 md:gap-10">
-                  <span className="index-num font-mono text-sm text-muted md:text-base">/{ch.num}</span>
-                  <span className="index-name font-display text-[clamp(1.9rem,6vw,5.2rem)] font-black uppercase leading-none tracking-tight">
-                    {ch.name}
-                  </span>
-                  <span className="index-arrow ml-auto hidden shrink-0 text-accent opacity-40 md:block">
-                    <ArrowUpRight size={34} strokeWidth={1.5} />
-                  </span>
-                </div>
-                <span className="index-desc mt-0 text-muted">
-                  <span>
-                    <span className="flex flex-wrap items-center gap-x-6 gap-y-1 pt-2 font-mono text-[11px] uppercase tracking-[0.16em]">
-                      <span>{ch.meta}</span>
-                      <span className="text-accent">✷</span>
-                      <span>{ch.chips.join(" · ")}</span>
+                Ольга
+              </motion.span>
+            </span>
+            <span className="block overflow-hidden">
+              <motion.span
+                initial={{ y: "112%" }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.95, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+                className="text-stroke block text-[clamp(1.9rem,4vw,4.1rem)]"
+              >
+                Бакушкина
+              </motion.span>
+            </span>
+          </h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-4 font-accent text-lg italic text-muted md:text-xl"
+          >
+            {fine ? "наведи на строку — кадр оживёт · перетащи его" : "выбери направление — листай кадры →"}
+          </motion.p>
+
+          {/* индекс */}
+          <div className="mt-7 border-t border-line">
+            {CHAPTERS.map((ch, i) => (
+              <motion.div
+                key={ch.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.42 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <Link
+                  to={ch.to}
+                  data-cursor
+                  onMouseEnter={() => setActive(ch.id)}
+                  onFocus={() => setActive(ch.id)}
+                  className="index-row group relative block border-b border-line py-3 lg:py-3.5"
+                >
+                  <div className="flex items-baseline gap-4 md:gap-6">
+                    <span className="index-num font-mono text-[11px] text-muted">/{ch.num}</span>
+                    <span className="index-name font-display text-[clamp(1.25rem,2.3vw,2.1rem)] font-black uppercase leading-none tracking-tight">
+                      {ch.name}
+                    </span>
+                    <span className="index-arrow ml-auto hidden shrink-0 text-accent opacity-40 sm:block">
+                      <ArrowUpRight size={20} strokeWidth={1.5} />
+                    </span>
+                  </div>
+                  <span className="index-desc text-muted">
+                    <span>
+                      <span className="flex flex-wrap items-center gap-x-4 gap-y-0.5 pt-1.5 font-mono text-[10px] uppercase tracking-[0.14em]">
+                        <span>{ch.meta}</span>
+                        <span className="text-accent">✷</span>
+                        <span>{ch.chips.join(" · ")}</span>
+                      </span>
                     </span>
                   </span>
-                </span>
-              </Link>
-            </motion.div>
-          ))}
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7, delay: 0.8 }}
+            className="mt-5 flex flex-wrap items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted"
+          >
+            <span>RU · US · EU</span>
+            <span className="hidden sm:block">06 кейсов · 4 направления</span>
+            <span>листай — главы услуг ↓</span>
+          </motion.div>
         </div>
 
-        {/* нижняя строка */}
-        <div className="mt-8 flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
-          <span>листай — главы услуг ↓</span>
-          <span className="hidden md:block">06 кейсов · 4 направления</span>
-          <span>RU · US · EU</span>
+        {/* ПРАВО: живая доска материалов */}
+        <div className="relative hidden lg:col-span-7 lg:block">
+          <div
+            ref={boardRef}
+            className="board-hint relative h-[56vh] max-h-[620px] min-h-[440px] w-full"
+          >
+            <span className="absolute -top-7 right-0 font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
+              перетащи кадры ✷ клик — открыть
+            </span>
+            {FRAMES.map((f, i) => (
+              <motion.div
+                key={f.id}
+                initial={{ opacity: 0, scale: 0.85, y: 40 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.5 + i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                className={`absolute ${f.cls} ${f.speed}`}
+              >
+                <motion.div
+                  drag={fine}
+                  dragConstraints={boardRef}
+                  dragElastic={0.09}
+                  dragMomentum={false}
+                  onDrag={() => (movedRef.current = true)}
+                  onDragEnd={() => setTimeout(() => (movedRef.current = false), 90)}
+                  onMouseEnter={() => setActive(f.id)}
+                  onClick={() => open(f.to)}
+                  whileDrag={{ scale: 1.06, boxShadow: "0 30px 60px rgba(0,0,0,0.45)" }}
+                  animate={{
+                    scale: active === f.id ? 1.045 : 1,
+                    opacity: active && active !== f.id ? 0.35 : 1,
+                    rotate: active === f.id ? 0 : f.rot,
+                  }}
+                  transition={{ type: "spring", stiffness: 220, damping: 22 }}
+                  style={{ zIndex: active === f.id ? 50 : f.z }}
+                  data-cursor
+                  className="group relative cursor-grab active:cursor-grabbing"
+                >
+                  {frameInner(f)}
+                </motion.div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* МОБИЛЬНАЯ ЛЕНТА КАДРОВ */}
+        <div className="-mx-5 lg:hidden">
+          <div className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2">
+            {FRAMES.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => navigate(f.to)}
+                data-cursor
+                className="group w-[72vw] max-w-[340px] shrink-0 snap-center text-left"
+              >
+                {frameInner(f, true)}
+              </button>
+            ))}
+          </div>
+          <p className="mt-3 px-1 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
+            листай кадры →
+          </p>
         </div>
       </div>
 
-      {/* летающее превью за курсором */}
-      {fine && (
-        <AnimatePresence>
-          {hoverIdx !== null && (
-            <motion.div
-              key="preview"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.85 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="pointer-events-none absolute left-0 top-0 z-30 hidden w-[300px] md:block lg:w-[360px]"
-              style={{ x: sx, y: sy }}
-            >
-              <motion.div style={{ rotate: rot }} className="-translate-x-1/2 -translate-y-[58%]">
-                <div className="overflow-hidden rounded-xl border border-line bg-card shadow-2xl">
-                  <div className="relative aspect-[4/3] overflow-hidden">
-                    <AnimatePresence mode="wait">
-                      <motion.img
-                        key={hoverIdx}
-                        src={CHAPTERS[hoverIdx].visuals[0]}
-                        alt=""
-                        initial={{ opacity: 0, scale: 1.08 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="h-full w-full object-cover"
-                      />
-                    </AnimatePresence>
-                    {CHAPTERS[hoverIdx].video && (
-                      <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-bg/80 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] backdrop-blur">
-                        <Play size={10} className="text-accent" /> шоурил
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between px-4 py-3">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
-                      {CHAPTERS[hoverIdx].meta}
-                    </span>
-                    <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.18em] text-accent">
-                      открыть <ArrowUpRight size={11} />
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
+      {/* бегущая строка материалов — нижняя кромка пульта */}
+      <div className="relative border-t border-line bg-bg2/80 py-3 backdrop-blur lg:border-b">
+        <Marquee duration={24}>
+          {["Шоурил 45 сек", "Маскоты «Альфы»", "Питч-деки", "AI-аватары", "Упаковка Ecozavr", "SMM-системы", "Эксплейнеры", "LoRA под стиль"].map(
+            (t, i) => (
+              <span key={t} className="flex items-center">
+                <span
+                  className={`px-6 font-display text-xl font-black uppercase tracking-tight md:text-2xl ${
+                    i % 2 ? "text-stroke" : ""
+                  }`}
+                >
+                  {t}
+                </span>
+                <span className="text-accent">✷</span>
+              </span>
+            )
           )}
-        </AnimatePresence>
-      )}
+        </Marquee>
+      </div>
     </section>
   );
 }
@@ -321,8 +461,8 @@ function ChapterBlock({ ch, idx }: { ch: Chapter; idx: number }) {
   });
 
   return (
-    <div ref={ref} className="relative h-[230vh]">
-      <div className="sticky top-0 grid h-svh grid-cols-1 overflow-hidden lg:grid-cols-2">
+    <div ref={ref} className="relative lg:h-[230vh]">
+      <div className="grid grid-cols-1 lg:sticky lg:top-0 lg:h-svh lg:grid-cols-2 lg:overflow-hidden">
         {/* визуал */}
         <div className="relative hidden overflow-hidden border-r border-line lg:block">
           <motion.div style={{ scale }} className="absolute inset-0">
@@ -369,8 +509,8 @@ function ChapterBlock({ ch, idx }: { ch: Chapter; idx: number }) {
         </div>
 
         {/* контент */}
-        <div className="relative flex flex-col justify-center px-5 py-16 md:px-14">
-          <div className="chapter-num pointer-events-none absolute right-4 top-6 font-display text-[9rem] font-black leading-none md:text-[13rem]">
+        <div className="relative flex flex-col justify-center overflow-hidden px-5 py-14 md:px-14 lg:py-16">
+          <div className="chapter-num pointer-events-none absolute right-4 top-6 font-display text-[7rem] font-black leading-none md:text-[11rem]">
             {ch.num}
           </div>
 
@@ -390,10 +530,23 @@ function ChapterBlock({ ch, idx }: { ch: Chapter; idx: number }) {
 
             {/* мобильный визуал */}
             <div className="mb-6 overflow-hidden rounded-xl border border-line lg:hidden">
-              <img src={ch.visuals[0]} alt={ch.name} className="aspect-[16/10] w-full object-cover" />
+              {ch.video ? (
+                <video
+                  src={ch.video}
+                  poster={ch.visuals[0]}
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  onMouseEnter={(e) => e.currentTarget.play().catch(() => undefined)}
+                  className="aspect-[16/10] w-full object-cover"
+                />
+              ) : (
+                <img src={ch.visuals[0]} alt={ch.name} className="aspect-[16/10] w-full object-cover" />
+              )}
             </div>
 
-            <h3 className="font-display text-[clamp(2.4rem,6vw,5.5rem)] font-black uppercase leading-[0.9] tracking-tight">
+            <h3 className="font-display text-[clamp(2.2rem,5.4vw,5rem)] font-black uppercase leading-[0.9] tracking-tight">
               {ch.name}
             </h3>
             <p className="mt-5 max-w-md text-sm leading-relaxed text-muted md:text-base">{ch.desc}</p>
@@ -804,7 +957,7 @@ function Contact() {
           <span className="h-px w-10 bg-line" />
           <span>контакты</span>
         </div>
-        <h2 className="font-display text-[clamp(2.6rem,8vw,7.5rem)] font-black uppercase leading-[0.88] tracking-tight" data-reveal>
+        <h2 className="font-display text-[clamp(2.4rem,7vw,6.5rem)] font-black uppercase leading-[0.88] tracking-tight" data-reveal>
           Давайте сделаем
           <span className="block font-accent italic font-medium normal-case text-accent">что-нибудь громкое</span>
         </h2>
@@ -882,7 +1035,7 @@ export default function Home() {
 
   return (
     <div ref={rootRef}>
-      <HeroIndex />
+      <HeroBoard />
       <GuideChapters />
       <Works />
       <About />
