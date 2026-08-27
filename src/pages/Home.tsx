@@ -7,7 +7,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { FILTERS, PORTRAIT, WORKS, type Work } from "../data/works";
 import { MEDIA } from "../data/media";
 import { SERVICES, CATEGORIES } from "../data/services";
-import { fmtRub } from "../lib/format";
 import { Magnetic, Marquee, OrbitBadge, SectionHead } from "../components/ui";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -529,7 +528,6 @@ function Capabilities() {
         <div className="border-t border-line">
           {CATEGORIES.filter((c) => c.id !== "extra").map((cat, i) => {
             const items = SERVICES.filter((s) => s.cat === cat.id);
-            const minPrice = Math.min(...items.map((s) => s.prices.RU));
             const isOpen = open === cat.id;
             return (
               <div key={cat.id} className="border-b border-line" data-reveal>
@@ -550,7 +548,7 @@ function Capabilities() {
                       {cat.title}
                     </span>
                     <span className="mt-2 hidden font-mono text-[11px] uppercase tracking-[0.16em] text-muted md:block">
-                      {cat.desc} · от {fmtRub(minPrice)}
+                      {cat.desc}
                     </span>
                   </span>
                   <span className="col-span-2 flex justify-end md:col-span-2">
@@ -582,8 +580,7 @@ function Capabilities() {
                           key={s.id}
                           className="rounded-full border border-line px-3 py-1.5 font-mono text-[11px] text-muted transition-colors hover:border-accent hover:text-ink"
                         >
-                          {s.name} · <span className="text-ink">{fmtRub(s.prices.RU)}</span>
-                          {s.unit !== "шт" && s.unit !== "проект" ? `/${s.unit}` : ""}
+                          {s.name}
                         </span>
                       ))}
                     </div>
@@ -594,13 +591,6 @@ function Capabilities() {
                       >
                         {CAT_PAGE[cat.id]?.label ?? "направление"}
                         <ArrowUpRight size={13} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                      </Link>
-                      <Link
-                        to="/calculator"
-                        className="group inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-accent"
-                      >
-                        посчитать в калькуляторе
-                        <ArrowUpRight size={14} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                       </Link>
                     </div>
                   </div>
@@ -745,10 +735,9 @@ function TermsTicker() {
   const items = [
     "3 круга правок включены",
     "исходники — бесплатно",
-    "предоплата 50/50",
-    "срочность от +20%",
     "рынки RU · US · EU",
-    "НДС: самозанятость 6%",
+    "ответ в течение дня",
+    "дизайн × нейро × видео",
   ];
   return (
     <div className="border-y border-line bg-accent py-3.5 text-accentink">
@@ -848,12 +837,9 @@ function Footer() {
         <span className="hidden font-mono text-[11px] uppercase tracking-[0.16em] text-muted md:block">
           дизайн + код — без шаблонов
         </span>
-        <Link
-          to="/calculator"
-          className="group font-mono text-[11px] uppercase tracking-[0.16em] text-muted transition-colors hover:text-accent"
-        >
-          внутренний инструмент: калькулятор <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
-        </Link>
+        <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+          рынки RU · US · EU
+        </span>
       </div>
     </footer>
   );

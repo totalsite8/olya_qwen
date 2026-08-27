@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Pause, Play, Volume2, VolumeX, Clapperboard, Sparkles, ArrowUpRight } from "lucide-react";
 import { MEDIA } from "../data/media";
-import { PageHero, PageMarquee, MarketInsight, Process, PriceStrip, PageCTA } from "../components/ServicePage";
+import { PageHero, PageMarquee, VisualStrip, Process, PageCTA } from "../components/ServicePage";
 import { SectionHead, FadeIn } from "../components/ui";
 import { fmtMoney } from "../lib/format";
 
@@ -319,15 +319,15 @@ export default function Video() {
         <PageMarquee items={["Рекламные ролики", "Бренд-фильмы", "Эксплейнеры", "AI-видео", "Reels / Shorts", "Видеоидентичность"]} />
       </div>
 
-      <MarketInsight
-        title={<>Рынок видео<br />в 2026</>}
-        items={[
-          { v: "75%", k: "маркетинговых видео делаются с AI", note: "Но выигрывает не «сгенерировал и выложил», а ручной крафт поверх генерации: режиссура, свет, ритм. Это и есть наша планка." },
-          { v: "3 сек", k: "решают всё в коротком формате", note: "Хук в первые 3 секунды важнее хронометража. Поэтому короткие ролики продаём по деливераблу, а не по минуте." },
-          { v: "₽50K+", k: "минута анимации у студий РФ", note: "Фриланс-медиана — от 30 000 ₽/мин, студии от 50 000 ₽. Наша стандартная анимация 18 000 ₽/мин — студийный процесс по фриланс-цене." },
-          { v: "$1.5–5K", k: "минута 2D на рынке США", note: "AI-деливерабл 30 секунд — $400–1 000. Наш V1 $800/мин входит в вилку и включает 3 круга правок и исходники." },
-          { v: "×3", k: "формата в каждом заказе", note: "Пакет 16:9 + 9:16 + 1:1 — норма 2026 года. Клиент покупает не ролик, а покрытие всех площадок." },
-          { v: "€2–3K", k: "минута анимации в DACH", note: "Европа покупает системы: шаблоны, анимированные элементы брендбука, логику форматов. Поэтому продаём видеоидентичность, а не отдельные ролики." },
+      <VisualStrip
+        images={[
+          MEDIA.videoPoster,
+          MEDIA.alfaMascotsHero,
+          MEDIA.ecoAd,
+          MEDIA.domGrid,
+          MEDIA.heroBg,
+          MEDIA.ecoDogWash,
+          MEDIA.cubeCover,
         ]}
       />
 
@@ -347,12 +347,7 @@ export default function Video() {
 
       <Case0824 />
 
-      <PriceStrip
-        ids={["N3", "N2", "N4", "V1", "V2", "V3", "V4", "X8", "X9", "X11", "X3"]}
-        note="Цены за единицу из внутреннего прайса. Точную смету под ваш хронометраж, срочность и рынок соберёт калькулятор — он же посчитает ориентир по медиане рынка."
-      />
-
-      <PageCTA>Ролик от 5 рабочих дней. Пришлём референсы под вашу задачу и посчитаем смету за 10 минут.</PageCTA>
+      <PageCTA>Ролик от 5 рабочих дней. Пришлём референсы под вашу задачу.</PageCTA>
     </div>
   );
 }

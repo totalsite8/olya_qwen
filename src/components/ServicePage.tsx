@@ -1,15 +1,13 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
-import { ArrowRight, ArrowUpRight, Calculator } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { Marquee, SectionHead } from "./ui";
 import { MEDIA } from "../data/media";
-import { SERVICES, SERVICE_BY_ID, type Market } from "../data/services";
-import { fmtMoney } from "../lib/format";
+
+gsap.registerPlugin(ScrollTrigger);
 
 /* ---------- Hero с параллакс-фоном ---------- */
 export function PageHero({
@@ -54,7 +52,7 @@ export function PageHero({
         <div className="absolute inset-0 bg-gradient-to-b from-bg/70 via-bg/45 to-bg" />
       </div>
 
-      <div className="relative mx-auto max-w-[1600px] px-5 pb-20 pt-16 md:px-10 md:pb-32 md:pt-28">
+      <div className="relative mx-auto max-w-[1600px] px-5 pb-16 pt-14 md:px-10 md:pb-24 md:pt-24">
         <motion.p
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
@@ -95,7 +93,7 @@ export function PageHero({
           initial={{ opacity: 0, y: 22 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-8 max-w-2xl text-base leading-relaxed text-muted md:text-lg"
+          className="mt-7 max-w-2xl text-base leading-relaxed text-muted md:text-lg"
         >
           {subtitle}
         </motion.p>
@@ -104,7 +102,7 @@ export function PageHero({
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.34, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-10 flex flex-wrap gap-2.5"
+          className="mt-9 flex flex-wrap gap-2.5"
         >
           {chips.map((c) => (
             <span key={c} className="rounded-full border border-line bg-bg/60 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.14em] backdrop-blur-sm">
@@ -133,28 +131,24 @@ export function PageMarquee({ items }: { items: string[] }) {
   );
 }
 
-/* ---------- Исследование рынка ---------- */
-export function MarketInsight({ title, items }: { title: ReactNode; items: { v: string; k: string; note: string }[] }) {
+/* ---------- Визуальная лента изображений ---------- */
+export function VisualStrip({ images, reverse = false }: { images: string[]; reverse?: boolean }) {
+  const doubled = [...images, ...images];
   return (
-    <section className="mx-auto max-w-[1600px] px-5 py-20 md:px-10 md:py-28">
-      <SectionHead index="R" title={title} meta="Что показал анализ рынка — и почему мы целимся выше средней планки" />
-      <div className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line md:grid-cols-3">
-        {items.map((it, i) => (
-          <motion.div
-            key={it.k}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.7, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-            className="group bg-bg p-7 transition-colors hover:bg-surface md:p-9"
-          >
-            <div className="font-display text-3xl font-black text-accent md:text-4xl">{it.v}</div>
-            <div className="mt-3 font-semibold">{it.k}</div>
-            <p className="mt-2 text-sm leading-relaxed text-muted">{it.note}</p>
-          </motion.div>
+    <div className="overflow-hidden border-y border-line bg-card/40">
+      <div className={`marquee-track ${reverse ? "reverse" : ""}`} style={{ ["--marquee-dur" as string]: "46s" }}>
+        {doubled.map((src, i) => (
+          <div key={src + i} className="h-52 w-72 shrink-0 overflow-hidden border-r border-linesoft md:h-64 md:w-96">
+            <img
+              src={src}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.06]"
+            />
+          </div>
         ))}
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -193,88 +187,13 @@ export function Process({ steps }: { steps: { t: string; d: string; days: string
   );
 }
 
-/* ---------- Прайс-полоса из калькулятора ---------- */
-export function PriceStrip({ ids, note }: { ids: string[]; note: string }) {
-  const [market, setMarket] = useState<Market>("RU");
-  return (
-    <section className="border-y border-line bg-surface/60">
-      <div className="mx-auto max-w-[1600px] px-5 py-20 md:px-10 md:py-28">
-        <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
-          <div data-reveal>
-            <div className="mb-3 flex items-center gap-3 font-mono text-xs uppercase tracking-[0.22em] text-muted">
-              <span className="text-accent">($)</span>
-              <span className="h-px w-10 bg-line" />
-            </div>
-            <h2 className="font-display text-[clamp(1.9rem,4.4vw,3.6rem)] font-bold uppercase leading-[0.98] tracking-tight">
-              Сколько это стоит
-            </h2>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">{note}</p>
-          </div>
-          <div className="flex gap-1 rounded-full border border-line p-1">
-            {(["RU", "US", "EU"] as Market[]).map((m) => (
-              <button
-                key={m}
-                onClick={() => setMarket(m)}
-                className={`rounded-full px-4 py-1.5 font-mono text-[11px] uppercase tracking-wide transition-all ${
-                  market === m ? "bg-accent text-accentink" : "text-muted hover:text-ink"
-                }`}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-2xl border border-line">
-          {ids.map((id, i) => {
-            const s = SERVICE_BY_ID[id];
-            if (!s) return null;
-            return (
-              <div
-                key={id}
-                className={`group flex items-center justify-between gap-4 bg-bg px-5 py-4 transition-colors hover:bg-surface md:px-7 ${
-                  i > 0 ? "border-t border-linesoft" : ""
-                }`}
-              >
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold md:text-base">{s.name}</div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted">за {s.unit}</div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="font-display text-lg font-bold tabular-nums text-accent md:text-xl">
-                    {fmtMoney(s.prices[market], market)}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-8 flex flex-wrap items-center gap-4">
-          <Link
-            to="/calculator"
-            className="inline-flex items-center gap-3 rounded-full bg-accent px-7 py-3.5 font-mono text-xs font-medium uppercase tracking-[0.14em] text-accentink transition-transform hover:scale-[1.03]"
-            data-cursor
-          >
-            <Calculator size={15} />
-            Точный расчёт в калькуляторе
-          </Link>
-          <span className="font-mono text-[11px] uppercase tracking-wide text-muted">
-            срочность · права · 3 рынка
-          </span>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ---------- Финальный CTA ---------- */
+/* ---------- Финальный CTA (без калькулятора) ---------- */
 export function PageCTA({ children }: { children?: ReactNode }) {
   return (
     <section className="relative overflow-hidden">
       <img src={MEDIA.footerBg} alt="" className="absolute inset-0 h-full w-full object-cover opacity-30" />
       <div className="absolute inset-0 bg-gradient-to-b from-bg via-bg/30 to-bg/80" />
-      <div className="relative mx-auto max-w-[1600px] px-5 py-24 text-center md:px-10 md:py-36">
+      <div className="relative mx-auto max-w-[1600px] px-5 py-24 text-center md:px-10 md:py-32">
         <motion.h2
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -285,29 +204,21 @@ export function PageCTA({ children }: { children?: ReactNode }) {
           Обсудим <span className="text-accent">ваш проект?</span>
         </motion.h2>
         <p className="mx-auto mt-6 max-w-xl text-sm leading-relaxed text-muted md:text-base">
-          {children ?? "Ответ в течение рабочего дня. Бриф — 10 минут, оценка — бесплатно."}
+          {children ?? "Ответ в течение рабочего дня. Бриф — 10 минут."}
         </p>
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+        <div className="mt-10 flex flex-wrap items-center justify-center">
           <a
             href="https://t.me/obakushkina"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-full bg-accent px-8 py-4 font-mono text-xs font-medium uppercase tracking-[0.14em] text-accentink transition-transform hover:scale-[1.04]"
+            className="group inline-flex items-center gap-3 rounded-full bg-accent px-9 py-4 font-mono text-xs font-medium uppercase tracking-[0.14em] text-accentink transition-transform hover:scale-[1.04]"
             data-cursor
           >
-            Написать в Telegram <ArrowUpRight size={14} />
+            Написать в Telegram
+            <ArrowUpRight size={15} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </a>
-          <Link
-            to="/calculator"
-            className="inline-flex items-center gap-2 rounded-full border border-line px-8 py-4 font-mono text-xs uppercase tracking-[0.14em] transition-colors hover:border-accent hover:text-accent"
-            data-cursor
-          >
-            Посчитать бюджет <ArrowRight size={14} />
-          </Link>
         </div>
       </div>
     </section>
   );
 }
-
-export { SERVICES };
