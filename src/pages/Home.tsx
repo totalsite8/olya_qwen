@@ -1,17 +1,20 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   AnimatePresence,
   motion,
   useMotionValue,
+  useMotionValueEvent,
+  useScroll,
   useSpring,
+  useTransform,
 } from "framer-motion";
 import { ArrowUpRight, Play, Plus, X } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { FILTERS, PORTRAIT, WORKS, type Work } from "../data/works";
 import { MEDIA } from "../data/media";
-import { Magnetic, Marquee, Sprockets } from "../components/ui";
+import { Magnetic, Marquee } from "../components/ui";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -47,7 +50,7 @@ const CHAPTERS: Chapter[] = [
     name: "Нейрогенерации",
     desc: "Персонажи, продуктовые сцены и целые миры: генерация — 10% работы, остальное — отбор и ручная доработка.",
     chips: ["Консистентные персонажи", "Продукт без студии", "LoRA под ваш стиль"],
-    visuals: [MEDIA.alfaMascotsHero, MEDIA.domLaptop, MEDIA.projectsBg],
+    visuals: [MEDIA.alfaCatFull, MEDIA.domLaptop, MEDIA.projectsBg],
     meta: "кейс «Альфа»",
   },
   {
@@ -72,19 +75,14 @@ const CHAPTERS: Chapter[] = [
   },
 ];
 
-/* ================= КАДРЫ-МАТЕРИАЛЫ ДЛЯ ПУЛЬТА ================= */
+/* ================= КАДРЫ-МАТЕРИАЛЫ ================= */
 interface Frame {
   id: string;
   tag: string | null;
   to: string;
   src: string;
   label: string;
-  cls: string;
-  aspect: string;
-  rot: number;
-  z: number;
   video?: string;
-  speed: string;
 }
 
 const FRAMES: Frame[] = [
@@ -95,11 +93,6 @@ const FRAMES: Frame[] = [
     src: MEDIA.videoPoster,
     video: MEDIA.showreel,
     label: "Шоурил ’26",
-    cls: "left-0 top-[2%] w-[52%]",
-    aspect: "aspect-video",
-    rot: -3,
-    z: 30,
-    speed: "hb-a",
   },
   {
     id: "neuro",
@@ -107,11 +100,6 @@ const FRAMES: Frame[] = [
     to: "/neuro",
     src: MEDIA.alfaMascotsHero,
     label: "Альфа · персонажи",
-    cls: "right-0 top-0 w-[30%]",
-    aspect: "aspect-square",
-    rot: 4,
-    z: 20,
-    speed: "hb-b",
   },
   {
     id: "presentations",
@@ -119,11 +107,6 @@ const FRAMES: Frame[] = [
     to: "/presentations",
     src: MEDIA.cubeCover,
     label: "house CUBE · дек",
-    cls: "left-[19%] bottom-[1%] w-[37%]",
-    aspect: "aspect-video",
-    rot: -2,
-    z: 10,
-    speed: "hb-c",
   },
   {
     id: "design",
@@ -131,11 +114,6 @@ const FRAMES: Frame[] = [
     to: "/design",
     src: MEDIA.domGrid,
     label: "Домашний · SMM",
-    cls: "right-[2%] bottom-[3%] w-[24%]",
-    aspect: "aspect-[2/3]",
-    rot: -5,
-    z: 20,
-    speed: "hb-d",
   },
   {
     id: "eco",
@@ -143,97 +121,108 @@ const FRAMES: Frame[] = [
     to: "/design",
     src: MEDIA.ecoAd,
     label: "Ecozavr · упаковка",
-    cls: "left-[3%] top-[38%] w-[19%]",
-    aspect: "aspect-[3/4]",
-    rot: 6,
-    z: 5,
-    speed: "hb-e",
   },
 ];
 
-/* ================= HERO-ПУЛЬТ ================= */
+/* Ячейка мозаики: без наложений, живая внутри своей рамки */
+function FrameCell({
+  f,
+  active,
+  dimmed,
+  pspeed,
+  delay,
+  className,
+  onEnter,
+  onLeave,
+}: {
+  f: Frame;
+  active: boolean;
+  dimmed: boolean;
+  pspeed: number;
+  delay: number;
+  className: string;
+  onEnter: () => void;
+  onLeave: () => void;
+}) {
+  const navigate = useNavigate();
+  return (
+    <motion.button
+      onClick={() => navigate(f.to)}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      onFocus={onEnter}
+      data-cursor
+      data-pspeed={pspeed}
+      initial={{ opacity: 0, y: 36, scale: 0.96 }}
+      animate={{ opacity: dimmed ? 0.35 : 1, y: 0, scale: active ? 1.012 : 1 }}
+      transition={{ type: "spring", stiffness: 240, damping: 24, delay }}
+      className={`group relative block overflow-hidden rounded-xl border bg-card text-left shadow-xl transition-colors duration-300 ${
+        active ? "border-accent" : "border-line hover:border-accent/60"
+      } ${className}`}
+    >
+      {f.video ? (
+        <video
+          src={f.video}
+          poster={f.src}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          className="pcell-media h-full w-full scale-[1.12] object-cover"
+        />
+      ) : (
+        <img
+          src={f.src}
+          alt={f.label}
+          loading="eager"
+          className="pcell-media h-full w-full scale-[1.12] object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.2]"
+        />
+      )}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg/75 via-transparent to-transparent opacity-90" />
+      {f.video && (
+        <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-bg/80 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.14em] backdrop-blur">
+          <Play size={9} className="text-accent" /> live
+        </span>
+      )}
+      {f.tag && (
+        <span className="absolute right-3 top-3 rounded-full border border-line bg-bg/80 px-2 py-0.5 font-mono text-[9px] tracking-[0.18em] text-muted backdrop-blur">
+          /{f.tag}
+        </span>
+      )}
+      <div className="absolute inset-x-0 bottom-0 flex translate-y-0 items-center justify-between gap-2 bg-bg/85 px-3.5 py-2.5 backdrop-blur transition-transform duration-300 sm:translate-y-full sm:group-hover:translate-y-0">
+        <span className="truncate font-mono text-[9px] uppercase tracking-[0.16em] text-muted">{f.label}</span>
+        <span className="flex shrink-0 items-center gap-1 font-mono text-[9px] uppercase tracking-[0.16em] text-accent">
+          открыть <ArrowUpRight size={10} />
+        </span>
+      </div>
+    </motion.button>
+  );
+}
+
+/* ================= HERO-ПУЛЬТ (мозаика без наложений) ================= */
 function HeroBoard() {
   const rootRef = useRef<HTMLElement>(null);
-  const boardRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
   const [active, setActive] = useState<string | null>(null);
-  const [fine, setFine] = useState(false);
-  const movedRef = useRef(false);
-
-  useEffect(() => {
-    setFine(window.matchMedia("(pointer: fine)").matches);
-  }, []);
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
       const st = { trigger: rootRef.current, start: "top top", end: "bottom top", scrub: true };
       gsap.to(".hero-bgimg", { yPercent: 16, ease: "none", scrollTrigger: st });
       gsap.to(".hero-title", { yPercent: -9, ease: "none", scrollTrigger: st });
-      gsap.to(".hb-a", { yPercent: -9, ease: "none", scrollTrigger: st });
-      gsap.to(".hb-b", { yPercent: 11, ease: "none", scrollTrigger: st });
-      gsap.to(".hb-c", { yPercent: -13, ease: "none", scrollTrigger: st });
-      gsap.to(".hb-d", { yPercent: 9, ease: "none", scrollTrigger: st });
-      gsap.to(".hb-e", { yPercent: 16, rotate: 14, ease: "none", scrollTrigger: st });
-      gsap.to(".board-hint", { autoAlpha: 0, ease: "none", scrollTrigger: st });
+      /* параллакс внутри ячеек — карточки не смещаются, дышит только картинка */
+      gsap.utils.toArray<HTMLElement>("[data-pspeed]").forEach((cell) => {
+        const media = cell.querySelector(".pcell-media");
+        if (!media) return;
+        gsap.to(media, {
+          yPercent: Number(cell.dataset.pspeed),
+          ease: "none",
+          scrollTrigger: st,
+        });
+      });
     }, rootRef);
     return () => ctx.revert();
   }, []);
-
-  const open = (to: string) => {
-    if (!movedRef.current) navigate(to);
-  };
-
-  const frameInner = (f: Frame, mobile = false) => {
-    const isActive = active === f.id;
-    return (
-      <div
-        className={`relative overflow-hidden rounded-xl border bg-card shadow-2xl transition-colors duration-300 ${
-          isActive && !mobile ? "border-accent" : "border-line"
-        } ${f.aspect}`}
-      >
-        {f.video ? (
-          <video
-            src={f.video}
-            poster={f.src}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <img
-            src={f.src}
-            alt={f.label}
-            loading={mobile ? "lazy" : "eager"}
-            className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.06]"
-          />
-        )}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg/70 via-transparent to-transparent opacity-80" />
-        {f.video && (
-          <span className="absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-full bg-bg/80 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.14em] backdrop-blur">
-            <Play size={9} className="text-accent" /> live
-          </span>
-        )}
-        {f.tag && (
-          <span className="absolute right-2.5 top-2.5 rounded-full border border-line bg-bg/80 px-2 py-0.5 font-mono text-[9px] tracking-[0.18em] text-muted backdrop-blur">
-            /{f.tag}
-          </span>
-        )}
-        <div
-          className={`absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-bg/85 px-3 py-2 backdrop-blur transition-transform duration-300 ${
-            isActive && !mobile ? "translate-y-0" : mobile ? "translate-y-0" : "translate-y-full group-hover:translate-y-0"
-          }`}
-        >
-          <span className="truncate font-mono text-[9px] uppercase tracking-[0.16em] text-muted">{f.label}</span>
-          <span className="flex shrink-0 items-center gap-1 font-mono text-[9px] uppercase tracking-[0.16em] text-accent">
-            открыть <ArrowUpRight size={10} />
-          </span>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <section
@@ -252,19 +241,19 @@ function HeroBoard() {
       </div>
       <span
         aria-hidden
-        className="spin-slow pointer-events-none absolute left-[42%] top-[14%] hidden text-4xl text-accent/50 lg:block"
+        className="spin-slow pointer-events-none absolute left-[44%] top-[13%] hidden text-3xl text-accent/50 lg:block"
       >
         ✷
       </span>
 
-      <div className="relative mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-10 px-5 pb-8 md:px-10 lg:grid-cols-12 lg:gap-8 lg:pb-16">
+      <div className="relative mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 items-center gap-8 px-5 pb-6 md:px-10 lg:grid-cols-12 lg:gap-10 lg:pb-14">
         {/* ЛЕВО: индекс-проводник */}
         <div className="flex flex-col justify-center lg:col-span-5">
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[10px] uppercase tracking-[0.22em] text-muted"
+            className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[10px] uppercase tracking-[0.22em] text-muted"
           >
             <span className="rounded-full border border-line px-3 py-1">Портфолио — 2026</span>
             <span>проводник по услугам</span>
@@ -280,7 +269,7 @@ function HeroBoard() {
                 initial={{ y: "112%" }}
                 animate={{ y: 0 }}
                 transition={{ duration: 0.95, ease: [0.16, 1, 0.3, 1] }}
-                className="block text-[clamp(2.9rem,6.2vw,6.4rem)]"
+                className="block text-[clamp(2.9rem,6.2vw,6.2rem)]"
               >
                 Ольга
               </motion.span>
@@ -290,7 +279,7 @@ function HeroBoard() {
                 initial={{ y: "112%" }}
                 animate={{ y: 0 }}
                 transition={{ duration: 0.95, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-                className="text-stroke block text-[clamp(1.9rem,4vw,4.1rem)]"
+                className="text-stroke block text-[clamp(1.9rem,4vw,4rem)]"
               >
                 Бакушкина
               </motion.span>
@@ -303,10 +292,11 @@ function HeroBoard() {
             transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="mt-4 font-accent text-lg italic text-muted md:text-xl"
           >
-            {fine ? "наведи на строку — кадр оживёт · перетащи его" : "выбери направление — листай кадры →"}
+            наведи на строку — кадр оживёт · клик — открыть раздел
           </motion.p>
 
-          <div className="mt-7 border-t border-line">
+          {/* индекс */}
+          <div className="mt-6 border-t border-line">
             {CHAPTERS.map((ch, i) => (
               <motion.div
                 key={ch.id}
@@ -319,7 +309,9 @@ function HeroBoard() {
                   data-cursor
                   onMouseEnter={() => setActive(ch.id)}
                   onFocus={() => setActive(ch.id)}
-                  className="index-row group relative block border-b border-line py-3 lg:py-3.5"
+                  className={`index-row group relative block border-b border-line py-3 lg:py-3.5 ${
+                    active === ch.id ? "index-row-active" : ""
+                  }`}
                 >
                   <div className="flex items-baseline gap-4 md:gap-6">
                     <span className="index-num font-mono text-[11px] text-muted">/{ch.num}</span>
@@ -348,76 +340,77 @@ function HeroBoard() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.8 }}
-            className="mt-5 flex flex-wrap items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted"
+            className="mt-4 flex flex-wrap items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted"
           >
             <span>RU · US · EU</span>
             <span className="hidden sm:block">06 кейсов · 4 направления</span>
-            <span>листай — плёнка услуг ↓</span>
+            <span>листай — главы услуг ↓</span>
           </motion.div>
         </div>
 
-        {/* ПРАВО: живая доска материалов */}
-        <div className="relative hidden lg:col-span-7 lg:block">
-          <div ref={boardRef} className="board-hint relative h-[54vh] max-h-[600px] min-h-[430px] w-full">
-            <span className="absolute -top-7 right-0 font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
-              перетащи кадры ✷ клик — открыть
-            </span>
-            {FRAMES.map((f, i) => (
-              <motion.div
-                key={f.id}
-                initial={{ opacity: 0, scale: 0.85, y: 40 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.5 + i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                className={`absolute ${f.cls} ${f.speed}`}
-              >
-                <motion.div
-                  drag={fine}
-                  dragConstraints={boardRef}
-                  dragElastic={0.09}
-                  dragMomentum={false}
-                  onDrag={() => (movedRef.current = true)}
-                  onDragEnd={() => setTimeout(() => (movedRef.current = false), 90)}
-                  onMouseEnter={() => setActive(f.id)}
-                  onClick={() => open(f.to)}
-                  whileDrag={{ scale: 1.06, boxShadow: "0 30px 60px rgba(0,0,0,0.45)" }}
-                  animate={{
-                    scale: active === f.id ? 1.045 : 1,
-                    opacity: active && active !== f.id ? 0.35 : 1,
-                    rotate: active === f.id ? 0 : f.rot,
-                  }}
-                  transition={{ type: "spring", stiffness: 220, damping: 22 }}
-                  style={{ zIndex: active === f.id ? 50 : f.z }}
-                  data-cursor
-                  className="group relative cursor-grab active:cursor-grabbing"
-                >
-                  {frameInner(f)}
-                </motion.div>
-              </motion.div>
-            ))}
+        {/* ПРАВО: мозаика материалов — ячейки не перекрываются */}
+        <div className="lg:col-span-7">
+          <div className="mb-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
+            <span>материалы · связаны со строками слева</span>
+            <span className="hidden sm:block">клик — открыть</span>
           </div>
-        </div>
-
-        {/* МОБИЛЬНАЯ ЛЕНТА КАДРОВ */}
-        <div className="-mx-5 lg:hidden">
-          <div className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2">
-            {FRAMES.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => navigate(f.to)}
-                data-cursor
-                className="group w-[72vw] max-w-[340px] shrink-0 snap-center text-left"
-              >
-                {frameInner(f, true)}
-              </button>
-            ))}
+          <div className="grid grid-cols-12 gap-3 md:gap-4">
+            <FrameCell
+              f={FRAMES[0]}
+              active={active === FRAMES[0].id}
+              dimmed={active !== null && active !== FRAMES[0].id}
+              pspeed={-5}
+              delay={0.5}
+              onEnter={() => setActive(FRAMES[0].id)}
+              onLeave={() => setActive(null)}
+              className="col-span-12 h-52 sm:col-span-8 sm:h-[30vh] sm:max-h-[330px] sm:min-h-[230px]"
+            />
+            <FrameCell
+              f={FRAMES[1]}
+              active={active === FRAMES[1].id}
+              dimmed={active !== null && active !== FRAMES[1].id}
+              pspeed={6}
+              delay={0.58}
+              onEnter={() => setActive(FRAMES[1].id)}
+              onLeave={() => setActive(null)}
+              className="col-span-12 h-52 sm:col-span-4 sm:h-[30vh] sm:max-h-[330px] sm:min-h-[230px]"
+            />
+            <FrameCell
+              f={FRAMES[2]}
+              active={active === FRAMES[2].id}
+              dimmed={active !== null && active !== FRAMES[2].id}
+              pspeed={-4}
+              delay={0.66}
+              onEnter={() => setActive(FRAMES[2].id)}
+              onLeave={() => setActive(null)}
+              className="col-span-12 h-44 sm:col-span-5 sm:h-[21vh] sm:max-h-[230px] sm:min-h-[170px]"
+            />
+            <FrameCell
+              f={FRAMES[3]}
+              active={active === FRAMES[3].id}
+              dimmed={active !== null && active !== FRAMES[3].id}
+              pspeed={5}
+              delay={0.74}
+              onEnter={() => setActive(FRAMES[3].id)}
+              onLeave={() => setActive(null)}
+              className="col-span-12 h-44 sm:col-span-4 sm:h-[21vh] sm:max-h-[230px] sm:min-h-[170px]"
+            />
+            <FrameCell
+              f={FRAMES[4]}
+              active={active === FRAMES[4].id}
+              dimmed={active !== null && active !== FRAMES[4].id}
+              pspeed={-6}
+              delay={0.82}
+              onEnter={() => setActive(FRAMES[4].id)}
+              onLeave={() => setActive(null)}
+              className="col-span-12 h-44 sm:col-span-3 sm:h-[21vh] sm:max-h-[230px] sm:min-h-[170px]"
+            />
           </div>
-          <p className="mt-3 px-1 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
-            листай кадры →
-          </p>
         </div>
       </div>
 
-      <div className="relative border-t border-line bg-bg2/80 py-3 backdrop-blur lg:border-b">
+      {/* бегущая строка материалов — нижняя кромка пульта */}
+      <div className="relative border-t border-line bg-bg2/80 py-3 backdrop-blur">
         <Marquee duration={24}>
           {["Шоурил 45 сек", "Маскоты «Альфы»", "Питч-деки", "AI-аватары", "Упаковка Ecozavr", "SMM-системы", "Эксплейнеры", "LoRA под стиль"].map(
             (t, i) => (
@@ -439,308 +432,191 @@ function HeroBoard() {
   );
 }
 
-/* ================= ПЛЁНКА УСЛУГ ================= */
-function FilmPanel({
-  ch,
-  idx,
-  active,
-  frame,
-  setFrame,
-}: {
-  ch: Chapter;
-  idx: number;
-  active: number;
-  frame: number;
-  setFrame: (i: number) => void;
-}) {
-  const isActive = active === idx;
+/* ================= СКРОЛЛ-ГЛАВЫ ================= */
+function ChapterBlock({ ch, idx }: { ch: Chapter; idx: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
+  const [img, setImg] = useState(0);
+  const scale = useTransform(scrollYProgress, [0, 1], [1.1, 1]);
   const count = ch.visuals.length;
-  return (
-    <article
-      className={`relative flex h-[64svh] w-[88vw] shrink-0 snap-start flex-col justify-center px-6 pt-8 transition-opacity duration-500 md:px-12 lg:h-full lg:w-[74vw] lg:pt-0 xl:w-[68vw] ${
-        isActive ? "opacity-100" : "opacity-40"
-      }`}
-    >
-      <div className="chapter-num pointer-events-none absolute left-0 top-8 font-display text-[7rem] font-black leading-none md:text-[11rem] lg:top-10 lg:text-[15rem]">
-        {ch.num}
-      </div>
 
-      <div className="relative grid items-center gap-6 lg:grid-cols-12 lg:gap-10">
-        {/* сцена */}
-        <div className="order-1 lg:order-2 lg:col-span-7">
-          <div
-            className={`relative overflow-hidden rounded-xl border transition-colors duration-500 ${
-              isActive ? "border-accent/60" : "border-line"
-            }`}
-          >
-            <div className="relative aspect-[16/9] lg:aspect-[16/8.4]">
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    setImg(Math.min(count - 1, Math.floor(v * count)));
+  });
+
+  return (
+    <div ref={ref} className="relative lg:h-[230vh]">
+      <div className="grid grid-cols-1 lg:sticky lg:top-0 lg:h-svh lg:grid-cols-2 lg:overflow-hidden">
+        {/* визуал */}
+        <div className="relative hidden overflow-hidden border-r border-line lg:block">
+          <motion.div style={{ scale }} className="absolute inset-0">
+            {ch.video && img === 0 ? (
+              <video
+                src={ch.video}
+                poster={ch.visuals[0]}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="h-full w-full object-cover"
+              />
+            ) : (
               <AnimatePresence mode="popLayout">
-                {ch.video && frame === 0 ? (
-                  <motion.video
-                    key="video"
-                    src={ch.video}
-                    poster={ch.visuals[0]}
-                    initial={{ opacity: 0, scale: 1.05 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <motion.img
-                    key={frame}
-                    src={ch.visuals[frame]}
-                    alt={ch.name}
-                    initial={{ opacity: 0, scale: 1.05 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                    className="h-full w-full object-cover"
-                  />
-                )}
+                <motion.img
+                  key={img}
+                  src={ch.visuals[img]}
+                  alt={ch.name}
+                  initial={{ opacity: 0, scale: 1.04 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="h-full w-full object-cover"
+                />
               </AnimatePresence>
-              <span className="absolute left-3 top-3 rounded-full border border-line bg-bg/80 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.16em] backdrop-blur">
-                {ch.video && frame === 0 ? "▶ шоурил" : `кадр ${String(frame + 1).padStart(2, "0")}/${String(count).padStart(2, "0")}`}
-              </span>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-bg/60" />
+          </motion.div>
+          {/* счётчик кадров */}
+          <div className="absolute bottom-6 left-6 flex items-center gap-2">
+            {ch.visuals.map((_, i) => (
+              <span
+                key={i}
+                className={`h-1 rounded-full transition-all duration-500 ${
+                  i === img ? "w-8 bg-accent" : "w-3 bg-line"
+                }`}
+              />
+            ))}
+            <span className="ml-3 font-mono text-[10px] uppercase tracking-[0.2em] text-ink/70">
+              {String(img + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}
+            </span>
+          </div>
+        </div>
+
+        {/* контент */}
+        <div className="relative flex flex-col justify-center overflow-hidden px-5 py-14 md:px-14 lg:py-16">
+          <div className="chapter-num pointer-events-none absolute right-4 top-6 font-display text-[7rem] font-black leading-none md:text-[11rem]">
+            {ch.num}
+          </div>
+
+          <motion.div
+            key={ch.id + idx}
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-30%" }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="relative"
+          >
+            <div className="mb-4 flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.24em] text-muted">
+              <span className="text-accent">глава {ch.num}</span>
+              <span className="h-px w-10 bg-line" />
+              <span>{ch.meta}</span>
             </div>
-            {/* миниатюры кадров */}
-            <div className="flex gap-2 border-t border-line bg-bg/70 p-2 backdrop-blur">
-              {ch.visuals.map((v, i) => (
-                <button
-                  key={v + i}
-                  onClick={() => setFrame(i)}
-                  data-cursor
-                  className={`relative h-10 w-16 shrink-0 overflow-hidden rounded-md border transition-all md:h-12 md:w-20 ${
-                    i === frame ? "border-accent opacity-100" : "border-line opacity-50 hover:opacity-90"
-                  }`}
-                  aria-label={`Кадр ${i + 1}`}
+
+            {/* мобильный визуал */}
+            <div className="mb-6 overflow-hidden rounded-xl border border-line lg:hidden">
+              {ch.video ? (
+                <video
+                  src={ch.video}
+                  poster={ch.visuals[0]}
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  onMouseEnter={(e) => e.currentTarget.play().catch(() => undefined)}
+                  className="aspect-[16/10] w-full object-cover"
+                />
+              ) : (
+                <img src={ch.visuals[0]} alt={ch.name} className="aspect-[16/10] w-full object-cover" />
+              )}
+            </div>
+
+            <h3 className="font-display text-[clamp(2.2rem,5.4vw,5rem)] font-black uppercase leading-[0.9] tracking-tight">
+              {ch.name}
+            </h3>
+            <p className="mt-5 max-w-md text-sm leading-relaxed text-muted md:text-base">{ch.desc}</p>
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              {ch.chips.map((c) => (
+                <span
+                  key={c}
+                  className="rounded-full border border-line px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted transition-colors hover:border-accent hover:text-ink"
                 >
-                  <img src={v} alt="" className="h-full w-full object-cover" loading="lazy" />
-                  {ch.video && i === 0 && (
-                    <span className="absolute inset-0 grid place-items-center bg-bg/40">
-                      <Play size={12} className="text-accent" />
-                    </span>
-                  )}
-                </button>
+                  {c}
+                </span>
               ))}
             </div>
-          </div>
-        </div>
 
-        {/* текст */}
-        <div className="order-2 lg:order-1 lg:col-span-5">
-          <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.24em] text-muted">
-            <span className={isActive ? "text-accent" : ""}>глава {ch.num}</span>
-            <span className="h-px w-8 bg-line" />
-            <span>{ch.meta}</span>
-          </div>
-          <h3 className="mt-4 font-display text-[clamp(2rem,4.4vw,4.2rem)] font-black uppercase leading-[0.9] tracking-tight">
-            {ch.name}
-          </h3>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-muted">{ch.desc}</p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {ch.chips.map((c) => (
-              <span
-                key={c}
-                className="rounded-full border border-line px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted transition-colors hover:border-accent hover:text-ink"
-              >
-                {c}
-              </span>
-            ))}
-          </div>
-          <div className="mt-7">
-            <Magnetic>
-              <Link
-                to={ch.to}
+            <div className="mt-9 flex flex-wrap items-center gap-5">
+              <Magnetic>
+                <Link
+                  to={ch.to}
+                  data-cursor
+                  className="group inline-flex items-center gap-2.5 rounded-full bg-accent px-7 py-3.5 font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-accentink"
+                >
+                  открыть раздел
+                  <ArrowUpRight
+                    size={14}
+                    className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  />
+                </Link>
+              </Magnetic>
+              <button
+                onClick={() => document.getElementById("works")?.scrollIntoView({ behavior: "smooth" })}
                 data-cursor
-                className="group inline-flex items-center gap-2.5 rounded-full bg-accent px-7 py-3.5 font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-accentink"
+                className="group inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted transition-colors hover:text-accent"
               >
-                открыть раздел
-                <ArrowUpRight
-                  size={14}
-                  className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                />
-              </Link>
-            </Magnetic>
-          </div>
+                кейсы ниже <span className="transition-transform duration-300 group-hover:translate-y-1">↓</span>
+              </button>
+            </div>
+          </motion.div>
         </div>
       </div>
-    </article>
+    </div>
   );
 }
 
-function FilmChapters() {
-  const rootRef = useRef<HTMLElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const tcRef = useRef<HTMLSpanElement>(null);
-  const phRef = useRef<HTMLDivElement>(null);
-  const [pinned, setPinned] = useState(false);
+function GuideChapters() {
+  const secRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: secRef, offset: ["start start", "end end"] });
   const [active, setActive] = useState(0);
-  const [frame, setFrame] = useState(0);
-  const startRef = useRef(0);
-  const amountRef = useRef(0);
-
-  // режим «плёнки»: пин только на широких экранах без reduced-motion
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const rm = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const apply = () => setPinned(mq.matches && !rm.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    rm.addEventListener("change", apply);
-    return () => {
-      mq.removeEventListener("change", apply);
-      rm.removeEventListener("change", apply);
-    };
-  }, []);
-
-  const setTimecode = useCallback((p: number) => {
-    const t = Math.min(45, p * 45);
-    const ss = Math.floor(t);
-    const ff = Math.floor((t % 1) * 25);
-    if (tcRef.current)
-      tcRef.current.textContent = `00:${String(ss).padStart(2, "0")}:${String(ff).padStart(2, "0")}`;
-    if (phRef.current) phRef.current.style.transform = `scaleX(${Math.min(1, p)})`;
-  }, []);
-
-  // GSAP-пин: вертикальный скролл крутит плёнку горизонтально
-  useLayoutEffect(() => {
-    if (!pinned) return;
-    const ctx = gsap.context(() => {
-      const track = trackRef.current;
-      if (!track) return;
-      const amount = () => Math.max(0, track.scrollWidth - window.innerWidth);
-      gsap.to(track, {
-        x: () => -amount(),
-        ease: "none",
-        scrollTrigger: {
-          trigger: rootRef.current,
-          start: "top top",
-          end: () => "+=" + amount(),
-          pin: true,
-          scrub: 0.7,
-          invalidateOnRefresh: true,
-          onUpdate: (self) => {
-            startRef.current = self.start;
-            amountRef.current = self.end - self.start;
-            setTimecode(self.progress);
-            const idx = Math.min(CHAPTERS.length - 1, Math.floor(self.progress * CHAPTERS.length));
-            setActive((v) => (v === idx ? v : idx));
-          },
-        },
-      });
-    }, rootRef);
-    const t = setTimeout(() => ScrollTrigger.refresh(), 350);
-    const onResize = () => ScrollTrigger.refresh();
-    window.addEventListener("resize", onResize);
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener("resize", onResize);
-      ctx.revert();
-    };
-  }, [pinned, setTimecode]);
-
-  // мобильный трек: следим за свайпом
-  const onTrackScroll = useCallback(() => {
-    const el = trackRef.current;
-    if (!el || pinned) return;
-    const max = Math.max(1, el.scrollWidth - el.clientWidth);
-    const p = el.scrollLeft / max;
-    setTimecode(p);
-    const idx = Math.min(CHAPTERS.length - 1, Math.round(p * (CHAPTERS.length - 1)));
-    setActive((v) => (v === idx ? v : idx));
-  }, [pinned, setTimecode]);
-
-  // автопрокрутка кадров активной панели
-  useEffect(() => {
-    setFrame(0);
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const id = setInterval(() => {
-      setFrame((f) => (f + 1) % CHAPTERS[active].visuals.length);
-    }, 2800);
-    return () => clearInterval(id);
-  }, [active]);
-
-  const goTo = (i: number) => {
-    if (pinned) {
-      const top = startRef.current + (i / Math.max(1, CHAPTERS.length - 1)) * amountRef.current;
-      window.scrollTo({ top, behavior: "smooth" });
-    } else {
-      const el = trackRef.current?.children[i] as HTMLElement | undefined;
-      el?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
-    }
-  };
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    setActive(Math.min(CHAPTERS.length - 1, Math.floor(v * CHAPTERS.length)));
+  });
 
   return (
-    <section
-      ref={rootRef}
-      id="services"
-      className="relative border-y border-line bg-bg2/50 lg:h-svh lg:overflow-hidden"
-    >
-      <div
-        ref={trackRef}
-        onScroll={onTrackScroll}
-        className="no-scrollbar relative flex w-max snap-x snap-mandatory items-stretch overflow-x-auto lg:h-full lg:snap-none lg:overflow-visible"
-      >
-        {/* перфорация плёнки едет вместе с треком */}
-        <Sprockets count={170} className="absolute inset-x-0 top-2 py-1 opacity-70" />
-        <Sprockets count={170} className="absolute inset-x-0 bottom-[3.4rem] hidden py-1 opacity-70 lg:flex" />
-
+    <section ref={secRef} id="services" className="relative border-t border-line">
+      {/* рельса прогресса */}
+      <div className="absolute left-5 top-1/2 z-20 hidden -translate-y-1/2 flex-col items-center gap-5 xl:flex">
         {CHAPTERS.map((ch, i) => (
-          <FilmPanel key={ch.id} ch={ch} idx={i} active={active} frame={frame} setFrame={setFrame} />
-        ))}
-
-        {/* финальный кадр */}
-        <article className="relative flex h-[64svh] w-[88vw] shrink-0 snap-start flex-col items-center justify-center px-6 lg:h-full lg:w-[46vw]">
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted">конец плёнки услуг</p>
           <button
-            onClick={() => document.getElementById("works")?.scrollIntoView({ behavior: "smooth" })}
-            data-cursor
-            className="group mt-5 text-center"
+            key={ch.id}
+            onClick={() =>
+              document.getElementById(`chapter-${ch.id}`)?.scrollIntoView({ behavior: "smooth" })
+            }
+            className="group flex flex-col items-center gap-1.5"
+            aria-label={ch.name}
           >
-            <span className="text-stroke-accent block font-display text-[clamp(2.6rem,6vw,5.4rem)] font-black uppercase leading-[0.9] tracking-tight transition-colors group-hover:text-accent">
-              работы
+            <span
+              className={`font-mono text-[10px] tracking-[0.2em] transition-colors ${
+                i === active ? "text-accent" : "text-muted group-hover:text-ink"
+              }`}
+            >
+              {ch.num}
             </span>
-            <span className="mt-3 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted transition-colors group-hover:text-accent">
-              избранные кейсы <span className="transition-transform duration-300 group-hover:translate-y-1">↓</span>
-            </span>
+            <span
+              className={`w-px transition-all duration-500 ${
+                i === active ? "h-10 bg-accent" : "h-5 bg-line"
+              }`}
+            />
           </button>
-        </article>
+        ))}
       </div>
 
-      {/* таймлайн-скраббер */}
-      <div className="relative z-30 border-t border-line bg-bg/85 backdrop-blur lg:absolute lg:inset-x-0 lg:bottom-0">
-        <div className="mx-auto flex max-w-[1600px] items-center gap-4 px-5 py-3 md:px-10">
-          <span ref={tcRef} className="w-20 font-mono text-[11px] tabular-nums tracking-[0.14em] text-accent">
-            00:00:00
-          </span>
-          <div className="relative h-[3px] flex-1 overflow-hidden rounded-full bg-line">
-            <div ref={phRef} className="absolute inset-0 origin-left rounded-full bg-accent" style={{ transform: "scaleX(0)" }} />
-          </div>
-          <div className="flex items-center gap-1">
-            {CHAPTERS.map((c, i) => (
-              <button
-                key={c.id}
-                onClick={() => goTo(i)}
-                data-cursor
-                aria-label={c.name}
-                className={`rounded-full px-2.5 py-1 font-mono text-[10px] tracking-[0.12em] transition-all ${
-                  i === active ? "bg-accent text-accentink" : "text-muted hover:text-ink"
-                }`}
-              >
-                {c.num}
-              </button>
-            ))}
-          </div>
-          <span className="hidden font-mono text-[10px] uppercase tracking-[0.2em] text-muted sm:block">
-            {pinned ? "скролль — плёнка едет →" : "свайпай плёнку →"}
-          </span>
+      {CHAPTERS.map((ch, i) => (
+        <div key={ch.id} id={`chapter-${ch.id}`}>
+          <ChapterBlock ch={ch} idx={i} />
         </div>
-      </div>
+      ))}
     </section>
   );
 }
@@ -1144,7 +1020,7 @@ export default function Home() {
   return (
     <div ref={rootRef}>
       <HeroBoard />
-      <FilmChapters />
+      <GuideChapters />
       <Works />
       <About />
       <Contact />

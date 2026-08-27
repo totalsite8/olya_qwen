@@ -269,6 +269,17 @@ input[type="range"]::-moz-range-thumb {
   transform: translate(6px, -6px);
   opacity: 1;
 }
+.index-row-active .index-name {
+  color: var(--accent);
+  transform: translateX(0.35em);
+}
+.index-row-active .index-num {
+  color: var(--accent);
+}
+.index-row-active .index-arrow {
+  transform: translate(6px, -6px);
+  opacity: 1;
+}
 .index-row .index-desc {
   display: grid;
   grid-template-rows: 0fr;
